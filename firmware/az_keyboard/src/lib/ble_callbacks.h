@@ -16,6 +16,7 @@
 
 
 enum via_command_id {
+    // remap用
     id_get_protocol_version                 = 0x01,  // always 0x01
     id_get_keyboard_value                   = 0x02,
     id_set_keyboard_value                   = 0x03,
@@ -35,6 +36,21 @@ enum via_command_id {
     id_dynamic_keymap_get_layer_count       = 0x11,
     id_dynamic_keymap_get_buffer            = 0x12,
     id_dynamic_keymap_set_buffer            = 0x13,
+
+    // aztool用
+    id_get_file_start                       = 0x30,
+    id_get_file_data                        = 0x31,
+    id_save_file_start                      = 0x32,
+    id_save_file_data                       = 0x33,
+    id_save_file_complate                   = 0x34,
+    id_remove_file                          = 0x35,
+    id_move_file                            = 0x36,
+    id_get_file_list                        = 0x37,
+    id_restart                              = 0x38,
+    id_get_ioxp_key                         = 0x39,
+    id_set_mode_flag                        = 0x3A,
+
+    // システム用
     id_unhandled                            = 0xFF,
 };
 

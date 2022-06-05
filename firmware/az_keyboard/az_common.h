@@ -10,7 +10,9 @@
 #include <WiFi.h>
 #include <WiFiMulti.h>
 #include <HTTPClient.h>
+#include <Wire.h>
 #include <Adafruit_NeoPixel.h>
+#include <Adafruit_MCP23X17.h>
 
 #include "src/lib/neopixel.h"
 #include "src/lib/HTTPClient_my.h"
@@ -107,6 +109,29 @@ struct setting_key_press {
     char *data; // 入力データ
 };
 
+// IOエキスパンダオプションの設定
+struct ioxp_option {
+    uint8_t addr; // IOエキスパンダのアドレス
+    uint8_t *row; // row のピン
+    uint16_t row_mask; // row output する時に使う全ROWのOR
+    uint16_t *row_output; // row output する時のピンにwriteするデータ
+    uint8_t row_len;
+    uint8_t *col;
+    uint8_t col_len;
+    uint8_t *direct;
+    uint8_t direct_len;
+};
+
+// i2cオプションの設定
+struct i2c_option {
+    uint8_t opt_type; // オプションのタイプ 1: ioエキスパンダキーボード
+    ioxp_option *ioxp; // 使用するIOエキスパンダの設定
+    uint8_t ioxp_len; // IOエキスパンダ設定の数
+    short map_start; // キー設定の番号開始番号
+    short *map; // キーとして読み取る番号の配列
+    uint8_t map_len; // マッピング設定の数
+};
+
 // WIFI設定
 struct setting_wifi {
     char *ssid;
@@ -159,10 +184,10 @@ class AzCommon
         void clear_keymap(); // キーマップ用に確保しているメモリを解放
         void get_keymap(JsonObject setting_obj); // JSONデータからキーマップの情報を読み込む
         void remap_save_setting_json(); // REMAPで受け取ったデータをJSONデータに書き込む
-        void get_keyboard_type_int(String t); // キーボードのタイプ番号を取得
         int read_file(char *file_path, String &read_data); // ファイルからデータを読み出す
         int write_file(char *file_path, String &write_data); // ファイルにデータを保存する
         int remove_file(char *file_path); // ファイルを削除する
+        int i2c_setup(int p, i2c_option *opt); // IOエキスパンダの初期化(戻り値：増えるキーの数)
         void pin_setup(); // キーの入力ピンの初期化
         bool layers_exists(int layer_no); // レイヤーが存在するか確認
         setting_key_press get_key_setting(int layer_id, int key_num); // 指定したキーの入力設定を取得する
@@ -173,6 +198,7 @@ class AzCommon
         void save_file_data(char *file_path, uint8_t *save_point, uint16_t save_size); // ファイルに設定値を書込み
         void set_boot_mode(int set_mode); // 起動モードを切り替えてEEPROMに保存
         void change_mode(int set_mode); // モードを切り替えて再起動
+        int i2c_read(int p, i2c_option *opt, char *read_data); // I2C機器のキー状態を取得
         void key_read(); // 現在のキーの状態を取得
         void key_old_copy(); // 現在のキーの状態を過去用配列にコピー
         char input_key[KEY_INPUT_MAX]; // 今入力中のキー
@@ -201,6 +227,9 @@ extern int status_led_bit;
 // ステータスLED表示モード
 extern int status_led_mode;
 
+// IOエキスパンダオブジェクト
+extern Adafruit_MCP23X17 *ioxp_obj[8];
+
 // 入力用ピン情報
 extern short col_len;
 extern short row_len;
@@ -210,6 +239,18 @@ extern short *col_list;
 extern short *row_list;
 extern short *direct_list;
 extern short *touch_list;
+
+extern short ioxp_len;
+extern short *ioxp_list;
+extern short ioxp_sda;
+extern short ioxp_scl;
+extern int ioxp_hz;
+extern short ioxp_status[8];
+extern int ioxp_hash[8];
+
+// I2Cオプションの設定
+extern i2c_option *i2copt;
+extern short i2copt_len;
 
 // rgb_led制御用クラス
 extern Neopixel rgb_led_cls;
@@ -229,9 +270,6 @@ extern char webhook_buf[WEBFOOK_BUF_SIZE];
 // 入力キーの数
 extern int key_input_length;
 
-// キーボードタイプの番号
-extern int keyboard_type_int;
-
 // キーボードの言語(日本語=0/ US=1 / 日本語(US記号) = 2)
 extern uint8_t keyboard_language;
 
@@ -250,9 +288,11 @@ extern press_mouse_data press_mouse_list[PRESS_MOUSE_MAX];
 // マウスのスクロールボタンが押されているか
 extern bool mouse_scroll_flag;
 
+// aztoolで設定中かどうか
+extern bool aztool_mode_flag;
+
 // オールクリア送信フラグ
 extern int press_key_all_clear;
-
 
 // EEPROMデータリンク
 extern mrom_data_set eep_data;
@@ -293,5 +333,8 @@ extern int8_t *led_num;
 extern int8_t *key_matrix;
 extern uint8_t led_num_length;
 extern uint8_t key_matrix_length;
+
+// ハッシュ値計算用
+int azcrc32(uint8_t* d, int len);
 
 #endif
