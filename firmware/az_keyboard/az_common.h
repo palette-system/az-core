@@ -19,7 +19,7 @@
 
 
 // キーボード
-#include "src/keyboard/az_macro.h"
+#include "src/lib/setting_json_default.h"
 
 
 #if defined(CONFIG_ARDUHAL_ESP_LOG)
@@ -29,6 +29,37 @@
   #include "esp_log.h"
   static const char* LOG_TAG = "AZM";
 #endif
+
+// メモリに保持するキーの数(メモリを確保するサイズ)
+#define KEY_INPUT_MAX  128
+
+// レイヤー切り替え同時押し許容数
+#define PRESS_KEY_MAX 16
+
+// マウス移動ボタン同時押し許容数
+#define PRESS_MOUSE_MAX 4
+
+// EEPROM 読み込み時のサイズ
+#define EEPROM_BUF_SIZE   256
+
+// WEBフック用のバッファサイズ
+#define WEBFOOK_BUF_SIZE 512
+
+// JSONバッファにPSRAMを使うかのフラグ
+#define SETTING_JSON_BUF_PSRAM 0
+
+// 設定JSONのバッファサイズ
+#define SETTING_JSON_BUF_SIZE 51200
+
+// 暗記ボタンで暗記できる数
+#define ANKEY_DATA_MAX_LENGTH  32
+
+// Neopixデータ送信周波数(400 or 800)
+#define AZ_NEO_KHZ 400
+
+// remap用 デフォルトの vid  pid
+#define BLE_HID_VID  0xE502
+#define BLE_HID_PID  0x0200
 
 
 // ファームウェアのバージョン文字
@@ -74,7 +105,6 @@ struct press_mouse_data {
 struct mrom_data_set {
     char check[10];
     char text[128];
-    char ap_ssid[32];
     int boot_mode; // 起動モード 0=キーボード / 1=設定モード
     char uid[12];
 };
@@ -269,6 +299,9 @@ extern char webhook_buf[WEBFOOK_BUF_SIZE];
 
 // 入力キーの数
 extern int key_input_length;
+
+// キーボードの名前
+extern char keyboard_name_str[32];
 
 // キーボードの言語(日本語=0/ US=1 / 日本語(US記号) = 2)
 extern uint8_t keyboard_language;

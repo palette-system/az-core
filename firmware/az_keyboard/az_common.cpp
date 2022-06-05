@@ -59,6 +59,9 @@ char webhook_buf[WEBFOOK_BUF_SIZE];
 // 入力キーの数
 int key_input_length;
 
+// キーボードの名前
+char keyboard_name_str[32];
+
 // キーボードの言語(日本語=0/ US=1 / 日本語(US記号) = 2)
 uint8_t keyboard_language;
 
@@ -500,6 +503,16 @@ void AzCommon::load_setting_json() {
         return;
     }
 
+    // キーボードの名前を取得する
+    String keynamestr;
+    if (setting_obj.containsKey("keyboard_name")) {
+        keynamestr = setting_obj["keyboard_name"].as<String>();
+        keynamestr.toCharArray(keyboard_name_str, 31);
+    } else {
+        // 設定が無い場合はデフォルト
+        sprintf(keyboard_name_str, "az_keyboard");
+    }
+
     // HID 設定
     String hidstr;
     if (setting_obj.containsKey("vendorId")) {
@@ -664,7 +677,7 @@ void AzCommon::load_setting_json() {
     // キーの設定を取得
     // まずは設定の数を取得
     layer_max = 0;
-    key_max = REMAP_KEY_MAX;
+    key_max = (16 * ioxp_len) + direct_len + touch_len;
     this->get_keymap(setting_obj);
 
 
@@ -1177,7 +1190,7 @@ bool AzCommon::create_setting_json() {
         return false;
     }
     // 書込み
-    if(!json_file.print(setting_default_json_bin)){
+    if(!json_file.print(setting_json_default_bin)){
         ESP_LOGD(LOG_TAG, "create_setting_json print error");
         json_file.close();
         return false;
@@ -1354,10 +1367,6 @@ void AzCommon::load_data() {
         eep_data.boot_mode = 0;
         // データチェック文字列
         strcpy(eep_data.check, EEP_DATA_VERSION);
-        // WIFIアクセスポイントの名前
-        char b[16];
-        getRandomNumbers(4, b);
-        sprintf(eep_data.ap_ssid, "%S-%S", WIFI_AP_SSI_NAME, b);
         // ユニークID
         getRandomNumbers(10, eep_data.uid);
         // 受け渡し用テキスト

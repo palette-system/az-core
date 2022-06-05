@@ -6,7 +6,7 @@
 #include "src/lib/dakey.h"
 
 // BLEキーボードクラス
-BleKeyboardJIS bleKeyboard(BLUETOOTH_SEARCH_NAME);
+BleKeyboardJIS bleKeyboard = BleKeyboardJIS();
 
 
 // 暗記ボタンクラス
@@ -38,7 +38,7 @@ void AzKeyboard::start_keyboard() {
     
     // bluetoothキーボード開始
     ESP_LOGD(LOG_TAG, "mmm: %D %D\n", heap_caps_get_free_size(MALLOC_CAP_32BIT), heap_caps_get_free_size(MALLOC_CAP_8BIT) );
-    bleKeyboard.begin();
+    bleKeyboard.begin(keyboard_name_str);
     ESP_LOGD(LOG_TAG, "mmm: %D %D\n", heap_caps_get_free_size(MALLOC_CAP_32BIT), heap_caps_get_free_size(MALLOC_CAP_8BIT) );
     
     // キーボードの言語を指定(日本語=0/ US=1 / 日本語(US記号) = 2)

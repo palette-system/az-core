@@ -222,9 +222,7 @@ void RemapOutputCallbacks::onWrite(NimBLECharacteristic* me) {
 			break;
 		}
 		case id_dynamic_keymap_set_keycode: { // 0x05 設定した内容を保存
-			m = (remap_buf[1] * REMAP_COL * REMAP_ROW  * 2) // レイヤー
-				+ (remap_buf[2] * REMAP_COL * 2) // ROW
-				+ (remap_buf[3] * 2); // COL
+			m = (remap_buf[1] * key_max * 2) + (remap_buf[3] * 2);
 			setting_remap[m] = remap_buf[4];
 			setting_remap[m + 1] = remap_buf[5];
 			remap_change_flag = 1;
