@@ -13,13 +13,14 @@
 	"led_num": [],
 	"key_matrix": [],
 	"keyboard_language": 0,
-	"keyboard_type": "az_macro",
+	"keyboard_type": "az_core",
 	"keyboard_pin": {
 		"row": [],
 		"col": [],
 		"direct": [21, 19, 22, 25],
 		"touch": []
 	},
+	"i2c_set": [18, 26, 400000],
 	"default_layer": 0,
 	"layers": {
 		"layer_0": {

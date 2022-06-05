@@ -542,7 +542,7 @@ void AzCommon::load_setting_json() {
     }
 
     // IOエキスパンダピン
-    if (setting_obj.containsKey("i2c_set") && setting_obj["i2c_set"].size() == 2) {
+    if (setting_obj.containsKey("i2c_set") && setting_obj["i2c_set"].size() == 3) {
         ioxp_sda = setting_obj["i2c_set"][0].as<signed int>();
         ioxp_scl = setting_obj["i2c_set"][1].as<signed int>();
         ioxp_hz = setting_obj["i2c_set"][2].as<signed int>();
