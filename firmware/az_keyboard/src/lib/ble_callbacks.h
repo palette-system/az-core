@@ -49,6 +49,7 @@ enum via_command_id {
     id_restart                              = 0x38,
     id_get_ioxp_key                         = 0x39,
     id_set_mode_flag                        = 0x3A,
+    id_get_ap_list                          = 0x3B,
 
     // システム用
     id_unhandled                            = 0xFF,

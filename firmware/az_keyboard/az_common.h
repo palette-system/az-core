@@ -204,6 +204,7 @@ class AzCommon
         int split(String data, char delimiter, String *dst); // 区切り文字で分割する
         void set_status_led_timer(); // ステータスLED点滅タイマー登録
         void wifi_connect(); // WIFI接続
+        String get_wifi_ap_list_json(); // wifiアクセスポイントのリストをJSONで取得
         void get_domain(char *url, char *domain_name); // URLからドメイン名だけ取得
         String send_webhook_simple(char *url); // 単純なGETリクエストのWEBフック
         String send_webhook_post_file(char *url, char *file_path); // POSTでファイルの内容を送信する
@@ -256,6 +257,9 @@ extern int status_led_bit;
 
 // ステータスLED表示モード
 extern int status_led_mode;
+
+// キーボードのステータス
+extern int8_t keyboard_status;
 
 // IOエキスパンダオブジェクト
 extern Adafruit_MCP23X17 *ioxp_obj[8];

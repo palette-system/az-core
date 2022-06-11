@@ -111,11 +111,13 @@ BleConnectionStatus::BleConnectionStatus(void) {
 
 void BleConnectionStatus::onConnect(NimBLEServer* pServer)
 {
+  keyboard_status = 1;
   this->connected = true;
 };
 
 void BleConnectionStatus::onDisconnect(NimBLEServer* pServer)
 {
+  keyboard_status = 0;
   this->connected = false;
 };
 
@@ -665,6 +667,25 @@ void RemapOutputCallbacks::onWrite(NimBLECharacteristic* me) {
 			this->sendRawData(send_buf, 32);
 			return;
 			
+		}
+		case id_get_ap_list: {
+			// WIFI のアクセスポイントの一覧取得
+			keyboard_status = 2;
+			String apjson = common_cls.get_wifi_ap_list_json();
+			save_file_length = apjson.length() + 1;
+			save_file_data = (uint8_t *)malloc(save_file_length);
+			apjson.toCharArray((char *)save_file_data, save_file_length);
+			// 結果を返すコマンドを送信
+			send_buf[0] = 0x3B;
+			send_buf[1] = ((save_file_length >> 24) & 0xff);
+			send_buf[2] = ((save_file_length >> 16) & 0xff);
+			send_buf[3] = ((save_file_length >> 8) & 0xff);
+			send_buf[4] = (save_file_length & 0xff);
+			for (i=5; i<32; i++) send_buf[i] = 0x00;
+			this->sendRawData(send_buf, 32);
+			keyboard_status = 1;
+			return;
+
 		}
 
 

@@ -41,6 +41,9 @@ int status_led_bit = 0;
 // ステータスLED表示モード
 int status_led_mode;
 
+// キーボードのステータス
+int8_t keyboard_status;
+
 // rgb_led制御用クラス
 Neopixel rgb_led_cls = Neopixel();
 
@@ -243,6 +246,8 @@ void AzCommon::common_start() {
     aztool_mode_flag = false;
     // remap用 キー入力テスト中フラグ
     remap_input_test = 0;
+    // キーボードのステータス
+    keyboard_status = 0;
 }
 
 
@@ -285,6 +290,28 @@ void AzCommon::wifi_connect() {
     if (wifi_conn_flag) {
         ESP_LOGD(LOG_TAG, "wifi : connect OK!\r\n");
     }
+}
+
+// wifiアクセスポイントのリストをJSONで取得
+String AzCommon::get_wifi_ap_list_json() {
+    String res = "{\"list\": [";
+    int ssid_num;
+    String auth_open;
+    ssid_num = WiFi.scanNetworks();
+    if (ssid_num == 0) {
+        ESP_LOGD(LOG_TAG, "get_wifi_ap_list: no networks");
+    } else {
+        ESP_LOGD(LOG_TAG, "get_wifi_ap_list: %d\r\n", ssid_num);
+        for (int i = 0; i < ssid_num; ++i) {
+            auth_open = ((WiFi.encryptionType(i) == WIFI_AUTH_OPEN)? "true": "false");
+            if (i > 0) res += ",";
+            res += "{\"ssid\": \"" + WiFi.SSID(i) + "\", \"rssi\": \"" + WiFi.RSSI(i) + "\", \"auth_open\": " + auth_open + "}";
+            delay(10);
+        }
+    }
+    res += "]}";
+    ESP_LOGD(LOG_TAG, "%S", res);
+    return res;
 }
 
 // URLからドメイン名だけ抜き出す

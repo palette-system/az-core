@@ -57,7 +57,7 @@ void BleKeyboardJIS::end(void)
 // 接続中かどうかを返す
 bool BleKeyboardJIS::isConnected(void)
 {
-  return this->connectionStatus->connected;
+  return (this->connectionStatus->connected && keyboard_status == 1);
 };
 
 // BLE HID 開始処理
