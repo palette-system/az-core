@@ -537,10 +537,10 @@ void RemapOutputCallbacks::onWrite(NimBLECharacteristic* me) {
 				filep = dirp.openNextFile();
 			}
 			save_file_length = res.length();
-			m = save_file_length + 1;
+			m = save_file_length;
 			// ファイルリストの結果を送信用バッファに入れる
-			save_file_data = (uint8_t *)malloc(m);
-			res.toCharArray((char *)save_file_data, m);
+			save_file_data = (uint8_t *)malloc(m + 1);
+			res.toCharArray((char *)save_file_data, m + 1);
 			// 結果を返すコマンドを送信
 			send_buf[0] = 0x37;
 			send_buf[1] = ((save_file_length >> 24) & 0xff);
@@ -672,9 +672,9 @@ void RemapOutputCallbacks::onWrite(NimBLECharacteristic* me) {
 			// WIFI のアクセスポイントの一覧取得
 			keyboard_status = 2;
 			String apjson = common_cls.get_wifi_ap_list_json();
-			save_file_length = apjson.length() + 1;
-			save_file_data = (uint8_t *)malloc(save_file_length);
-			apjson.toCharArray((char *)save_file_data, save_file_length);
+			save_file_length = apjson.length();
+			save_file_data = (uint8_t *)malloc(save_file_length + 1);
+			apjson.toCharArray((char *)save_file_data, save_file_length + 1);
 			// 結果を返すコマンドを送信
 			send_buf[0] = 0x3B;
 			send_buf[1] = ((save_file_length >> 24) & 0xff);
