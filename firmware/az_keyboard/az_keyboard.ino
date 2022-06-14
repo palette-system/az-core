@@ -21,6 +21,12 @@ void setup() {
         status_led_mode = 0;
         common_cls.set_status_led_timer();
     }
+    // ステータスRGBLEDのクラス初期化
+    if (status_rgb_pin >= 0) {
+        status_rgb =  new Adafruit_NeoPixel(1, status_rgb_pin, NEO_GRB + NEO_KHZ400);
+        status_led_mode = 0;
+        common_cls.set_status_rgb_loop();
+    }
     // RGB_LEDクラス初期化
     ESP_LOGD(LOG_TAG, "rgb_led_cls.begin %D %D %D", rgb_pin, matrix_row, matrix_col);
     if (rgb_pin > 0 && matrix_row > 0 && matrix_col > 0) {

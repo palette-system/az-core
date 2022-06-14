@@ -203,6 +203,7 @@ class AzCommon
         void common_start(); // 共通処理の初期処理(setup時に呼ばれる)
         int split(String data, char delimiter, String *dst); // 区切り文字で分割する
         void set_status_led_timer(); // ステータスLED点滅タイマー登録
+        void set_status_rgb_loop(); // RGBステータスループ開始
         void wifi_connect(); // WIFI接続
         String get_wifi_ap_list_json(); // wifiアクセスポイントのリストをJSONで取得
         void get_domain(char *url, char *domain_name); // URLからドメイン名だけ取得
@@ -256,7 +257,12 @@ extern int status_pin;
 extern int status_led_bit;
 
 // ステータスLED表示モード
-extern int status_led_mode;
+extern int8_t status_led_mode;
+extern int8_t status_led_mode_last;
+
+// M5Stamp ステータス RGB_LED ピン、オブジェクト
+extern int8_t status_rgb_pin;
+extern Adafruit_NeoPixel *status_rgb;
 
 // キーボードのステータス
 extern int8_t keyboard_status;

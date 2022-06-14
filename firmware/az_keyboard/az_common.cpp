@@ -39,7 +39,12 @@ int status_pin = -1;
 int status_led_bit = 0;
 
 // ステータスLED表示モード
-int status_led_mode;
+int8_t status_led_mode;
+int8_t status_led_mode_last;
+
+// M5Stamp ステータス RGB_LED ピン、オブジェクト
+int8_t status_rgb_pin;
+Adafruit_NeoPixel *status_rgb;
 
 // キーボードのステータス
 int8_t keyboard_status;
@@ -162,6 +167,29 @@ void IRAM_ATTR status_led_write() {
     if (status_pin >= 0) digitalWrite(status_pin, set_bit);
 }
 
+static void status_rgb_loop(void* arg) {
+    while (true) {
+        if (status_led_mode == status_led_mode_last) {
+            vTaskDelay(100);
+            continue;
+        }
+        if (status_led_mode == 0) {
+            status_rgb->setPixelColor(0, status_rgb->Color(0, 0, 0));
+        } else if (status_led_mode == 1) {
+            status_rgb->setPixelColor(0, status_rgb->Color(0, 10, 0));
+        } else if (status_led_mode == 2) {
+            status_rgb->setPixelColor(0, status_rgb->Color(0, 0, 10));
+        } else if (status_led_mode == 3) {
+            status_rgb->setPixelColor(0, status_rgb->Color(0, 10, 10));
+        } else if (status_led_mode == 4) {
+            status_rgb->setPixelColor(0, status_rgb->Color(0, 0, 10));
+        }
+        status_rgb->show();
+        status_led_mode_last = status_led_mode;
+        vTaskDelay(100);
+    }
+}
+
 // ランダムな文字生成(1文字)
 char getRandomCharLower(void) {
     const char CHARS[] = "abcdefghijklmnopqrstuvwxyz";
@@ -248,6 +276,8 @@ void AzCommon::common_start() {
     remap_input_test = 0;
     // キーボードのステータス
     keyboard_status = 0;
+    // RGBLEDのステータス
+    status_led_mode_last = -1;
 }
 
 
@@ -257,6 +287,11 @@ void AzCommon::set_status_led_timer() {
     timerAttachInterrupt(timer, &status_led_write, true);
     timerAlarmWrite(timer, 100000, true); // 100ms
     timerAlarmEnable(timer);
+}
+
+// RGBステータスループ開始
+void AzCommon::set_status_rgb_loop() {
+    xTaskCreatePinnedToCore(status_rgb_loop, "rgbloop", 2048, NULL, 20, NULL, 1);
 }
 
 // WIFI 接続
@@ -736,6 +771,12 @@ void AzCommon::load_setting_json() {
     // ステータス表示用ピン番号取得
     if (setting_obj.containsKey("status_pin")) {
         status_pin = setting_obj["status_pin"].as<signed int>();
+    }
+
+    if (setting_obj.containsKey("status_rgb_pin")) {
+        status_rgb_pin = setting_obj["status_rgb_pin"].as<signed int>();
+    } else {
+        status_rgb_pin = -1;
     }
     
     // 設定されているデフォルトレイヤー取得
