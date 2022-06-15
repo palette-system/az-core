@@ -783,7 +783,11 @@ void AzCommon::load_setting_json() {
     default_layer_no = setting_obj["default_layer"].as<signed int>();
 
     // キーボードの言語取得
-    keyboard_language = setting_obj["keyboard_language"].as<signed int>();
+    if (setting_obj.containsKey("keyboard_language")) {
+        keyboard_language = setting_obj["keyboard_language"].as<signed int>();
+    } else {
+        keyboard_language = 0;
+    }
 
     // RGBLED設定の取得
     rgb_pin = -1;

@@ -19,19 +19,11 @@ BleKeyboardJIS::BleKeyboardJIS(void)
   this->_MouseButtons = 0x00;
   this->batteryLevel = 100;
   this->connectionStatus = new BleConnectionStatus();
-  this->keyboard_language = 0;
   this->_hidReportDescriptor = (uint8_t *)_hidReportDescriptorDefault;
   this->_hidReportDescriptorSize = sizeof(_hidReportDescriptorDefault);
-  this->_asciimap = (unsigned short *)_asciimap_default;
-  this->_codemap_us = (unsigned short *)_codemap_us_default;
   
 };
 
-// 日本語キーボード、USキーボードを設定
-void BleKeyboardJIS::set_keyboard_language(uint8_t kl)
-{
-  this->keyboard_language = kl;
-};
 
 // HID report map 設定
 // 例： bleKeyboard.set_report_map((uint8_t *)_hidReportDescriptorDefault, sizeof(_hidReportDescriptorDefault));
@@ -313,36 +305,6 @@ unsigned short BleKeyboardJIS::modifiers_media_release(unsigned short k) {
   return 0;
 };
 
-unsigned short BleKeyboardJIS::code_convert(unsigned short k)
-{
-  short i = 0;
-  if (this->keyboard_language == 1) {
-    // US キーボード
-    while (this->_codemap_us[i]) {
-      if (this->_codemap_us[i] == k) {
-        return this->_codemap_us[i + 1];
-      }
-      i += 2;
-    }
-  } else if (this->keyboard_language == 2) {
-    // 日本語キーボード(US記号)
-    if (!this->onShift()) return k; // Shift が押されていなければそのまま
-    if (k == 31) { this->shift_release(); return 47; } // 2 -> @ (Shiftを離す)
-    if (k == 35) { this->shift_release(); return 46; } // 6 -> ^ (Shiftを離す)
-    if (k == 36) { return 4131; } // 7 -> &
-    if (k == 37) { return 4148; } // 8 -> *
-    if (k == 38) { return 4133; } // 9 -> (
-    if (k == 39) { return 4134; } // 0 -> )
-    if (k == 45) { return 4231; } // - -> _
-    if (k == 4141) { return 4147; } // = -> +
-    if (k == 51) { this->shift_release(); return 52; } // ; -> : (Shiftを離す)
-    if (k == 4132) { return 4127; } // ' -> "
-    if (k == 4143) { return 4142; } // ` -> ~
-    if (k == 135) { return 4233; } // \ -> |
-  }
-  return k;
-};
-
 void BleKeyboardJIS::sendReport(KeyReport* keys)
 {
   if (this->isConnected())
@@ -403,9 +365,8 @@ size_t BleKeyboardJIS::press_raw(unsigned short k)
   unsigned short kk;
   // メディアキー
   if (modifiers_media_press(k)) return 1;
-  kk = this->code_convert(k);
-  ESP_LOGD(LOG_TAG, "press_raw: %D", kk);
-  kk = this->modifiers_press(kk);
+  ESP_LOGD(LOG_TAG, "press_raw: %D", k);
+  kk = this->modifiers_press(k);
   ESP_LOGD(LOG_TAG, "press_raw modifiers: %D", this->_keyReport.modifiers);
   if (this->_keyReport.keys[0] != kk && this->_keyReport.keys[1] != kk &&
     this->_keyReport.keys[2] != kk && this->_keyReport.keys[3] != kk &&
@@ -430,7 +391,7 @@ size_t BleKeyboardJIS::press_set(uint8_t k)
 {
   uint8_t i;
   unsigned short kk;
-  kk = this->code_convert(this->_asciimap[k]);
+  kk = this->_asciimap[k];
   if (!kk) {
     ESP_LOGD(LOG_TAG, "press_set error: %D", k);
     return 0;
@@ -454,8 +415,7 @@ size_t BleKeyboardJIS::release_raw(unsigned short k)
   unsigned short kk;
   // メディアキー
   if (modifiers_media_release(k)) return 1;
-  kk = this->code_convert(k);
-  kk = this->modifiers_release(kk);
+  kk = this->modifiers_release(k);
 
   // Test the key report to see if k is present.  Clear it if it exists.
   // Check all positions in case the key is present more than once (which it shouldn't be)
