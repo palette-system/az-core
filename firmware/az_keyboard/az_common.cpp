@@ -1426,27 +1426,37 @@ setting_key_press AzCommon::get_key_setting(int layer_id, int key_num) {
 
 //データをEEPROMから読み込む。保存データが無い場合デフォルトにする。
 void AzCommon::load_data() {
-    // EEPROM初期化
-    EEPROM.begin(EEPROM_BUF_SIZE);
-    ESP_LOGD(LOG_TAG, "eeprom size: %D", EEPROM.length());
-    ESP_LOGD(LOG_TAG, "eeprom load\r\n");
-    EEPROM.get<mrom_data_set>(0, eep_data);
-    ESP_LOGD(LOG_TAG, "eeprom check: %S", eep_data.check);
-    if (strcmp(eep_data.check, EEP_DATA_VERSION)) { //バージョンをチェック
-        ESP_LOGD(LOG_TAG, "eeprom set default\r\n");
-        //保存データが無い場合デフォルトを設定
-        // 起動モード
-        eep_data.boot_mode = 0;
-        // データチェック文字列
-        strcpy(eep_data.check, EEP_DATA_VERSION);
-        // ユニークID
-        getRandomNumbers(10, eep_data.uid);
-        // 受け渡し用テキスト
-        strcpy(eep_data.text, "");
-        // 設定JSONも作り直す
-        create_setting_json();
-        // キーボードモードで再起動(ここでeep_dataも保存される)
-        change_mode(0);
+    // デフォルト値セット
+    // 起動モード
+    eep_data.boot_mode = 0;
+    // データチェック文字列
+    strcpy(eep_data.check, EEP_DATA_VERSION);
+    // ユニークID
+    getRandomNumbers(10, eep_data.uid);
+    // キーボードの種類
+    strcpy(eep_data.keyboard_type, "");
+    File fp;
+    if (!SPIFFS.exists(AZ_SYSTEM_FILE_PATH)) {
+        // ファイルが無い場合デフォルト値でファイルを作成
+        save_data();
+        return;
+    }
+    // ファイルがあればデータ読み込み
+    fp = SPIFFS.open(AZ_SYSTEM_FILE_PATH, "r");
+    if(!fp){
+        ESP_LOGD(LOG_TAG, "file open error\n");
+        return;
+    }
+    if (fp.available()) {
+        fp.read((uint8_t *)&eep_data, sizeof(mrom_data_set));
+    }
+    fp.close();
+    // データのバージョンが変わっていたらファイルを消して再起動
+    if (strcmp(eep_data.check, EEP_DATA_VERSION) != 0) {
+        SPIFFS.remove(AZ_SYSTEM_FILE_PATH);
+        SPIFFS.remove(SETTING_JSON_PATH);
+        delay(300);
+        ESP.restart(); // ESP32再起動
     }
 }
 
@@ -1454,14 +1464,12 @@ void AzCommon::load_data() {
 // データをEEPROMに書き込む
 void AzCommon::save_data() {
     //EEPROMに設定を保存する。
+    File fp;
     strcpy(eep_data.check, EEP_DATA_VERSION);
-    ESP_LOGD(LOG_TAG, "save eeprom boot mode: %D", eep_data.boot_mode);
-    ESP_LOGD(LOG_TAG, "save eeprom check sum: %S", eep_data.check);
-    ESP_LOGD(LOG_TAG, "text: %S", eep_data.text);
-    ESP_LOGD(LOG_TAG, "data sizeof: %D", sizeof(mrom_data_set));
-    EEPROM.put<mrom_data_set>(0, eep_data);
-    delay(200);
-    EEPROM.commit(); //大事
+    // ファイルに書き込み
+    fp = SPIFFS.open(AZ_SYSTEM_FILE_PATH, "w");
+    fp.write((uint8_t *)&eep_data, sizeof(mrom_data_set));
+    fp.close();
     delay(200);
     ESP_LOGD(LOG_TAG, "save complete\r\n");
 }

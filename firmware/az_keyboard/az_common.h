@@ -5,7 +5,6 @@
 #include "FS.h"
 #include "SPIFFS.h"
 
-#include <EEPROM.h>
 #include <ArduinoJson.h>
 #include <WiFi.h>
 #include <WiFiMulti.h>
@@ -39,9 +38,6 @@
 // マウス移動ボタン同時押し許容数
 #define PRESS_MOUSE_MAX 4
 
-// EEPROM 読み込み時のサイズ
-#define EEPROM_BUF_SIZE   256
-
 // WEBフック用のバッファサイズ
 #define WEBFOOK_BUF_SIZE 512
 
@@ -66,13 +62,16 @@
 #define FIRMWARE_VERSION   "000102"
 
 // EEPROMに保存しているデータのバージョン文字列
-#define EEP_DATA_VERSION    "AZM006"
+#define EEP_DATA_VERSION    "AZM024"
 
 // JSON のファイルパス
 #define SETTING_JSON_PATH "/setting.json"
 
 // 起動回数を保存するファイルのパス
 #define  BOOT_COUNT_PATH  "/boot_count"
+
+// システム情報を保存するファイルのパス
+#define  AZ_SYSTEM_FILE_PATH  "/sys_data"
 
 // 打鍵数を自動保存するかどうかの設定を保存するファイルパス
 #define  KEY_COUNT_AUTO_SAVE_PATH  "/key_count_auto_save"
@@ -104,7 +103,7 @@ struct press_mouse_data {
 // EEPROMに保存するデータ
 struct mrom_data_set {
     char check[10];
-    char text[128];
+    char keyboard_type[16];
     int boot_mode; // 起動モード 0=キーボード / 1=設定モード
     char uid[12];
 };

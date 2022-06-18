@@ -25,12 +25,6 @@ void AzKeyboard::start_keyboard() {
     // ステータスLED wifi接続中
     status_led_mode = 4;
 
-    // メモリ空けるためファイルシステム終了
-    // SPIFFS.end();
-
-    // EEPROMも終了
-    EEPROM.end();
-
     // Wifi 接続
     ESP_LOGD(LOG_TAG, "mmm: %D %D\n", heap_caps_get_free_size(MALLOC_CAP_32BIT), heap_caps_get_free_size(MALLOC_CAP_8BIT) );
     common_cls.wifi_connect();
