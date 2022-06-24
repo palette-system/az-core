@@ -391,7 +391,7 @@ size_t BleKeyboardJIS::press_set(uint8_t k)
 {
   uint8_t i;
   unsigned short kk;
-  kk = this->_asciimap[k];
+  kk = _asciimap[k];
   if (!kk) {
     ESP_LOGD(LOG_TAG, "press_set error: %D", k);
     return 0;

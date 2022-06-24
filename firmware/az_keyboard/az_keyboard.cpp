@@ -658,5 +658,13 @@ void AzKeyboard::loop_exec(void) {
     common_cls.key_old_copy();
 
     delay(5);
+/*
+    while (true) {
+        sprintf(instr, "%d %d\n", common_cls.get_power_vol(), millis() );
+        send_string(instr);
+        delay(20000);
+    }
+*/
+
   }
 }

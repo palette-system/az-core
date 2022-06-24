@@ -4,6 +4,7 @@
 #include "Arduino.h"
 #include "FS.h"
 #include "SPIFFS.h"
+#include "driver/adc.h"
 
 #include <ArduinoJson.h>
 #include <WiFi.h>
@@ -220,6 +221,10 @@ class AzCommon
         int remove_file(char *file_path); // ファイルを削除する
         int i2c_setup(int p, i2c_option *opt); // IOエキスパンダの初期化(戻り値：増えるキーの数)
         void pin_setup(); // キーの入力ピンの初期化
+        adc1_channel_t get_channel_1(int gpio_no); // GPIOの番号からADCのチャネルを取得する adc 1
+        adc2_channel_t get_channel_2(int gpio_no); // GPIOの番号からADCのチャネルを取得する adc 2
+        int get_adc_num(int gpio_no); // GPIOの番号からADC1かADC2かを返す
+        int get_power_vol(); // 電源電圧を取得
         bool layers_exists(int layer_no); // レイヤーが存在するか確認
         setting_key_press get_key_setting(int layer_id, int key_num); // 指定したキーの入力設定を取得する
         void load_data(); // EEPROMからデータをロードする
@@ -290,6 +295,10 @@ extern int ioxp_hash[8];
 // I2Cオプションの設定
 extern i2c_option *i2copt;
 extern short i2copt_len;
+
+// 動作電圧チェック用ピン
+extern int8_t power_read_pin; // 電圧を読み込むピン
+extern int8_t power_flag_pin; // 電圧を読み込む時のON/OFFを制御するピン
 
 // rgb_led制御用クラス
 extern Neopixel rgb_led_cls;

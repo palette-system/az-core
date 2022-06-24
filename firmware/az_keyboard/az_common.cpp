@@ -128,6 +128,10 @@ int ioxp_hash[8];
 i2c_option *i2copt;
 short i2copt_len;
 
+// 動作電圧チェック用ピン
+int8_t power_read_pin; // 電圧を読み込むピン
+int8_t power_flag_pin; // 電圧を読み込む時のON/OFFを制御するピン
+
 
 // ステータス用LED点滅
 void IRAM_ATTR status_led_write() {
@@ -614,6 +618,18 @@ void AzCommon::load_setting_json() {
     touch_list = new short[touch_len];
     for (i=0; i<touch_len; i++) {
         touch_list[i] = setting_obj["keyboard_pin"]["touch"][i].as<signed int>();
+    }
+
+    // 動作電圧チェック用ピン
+    power_read_pin = -1;
+    power_flag_pin = -1;
+    if (setting_obj.containsKey("power_read")) {
+        if (setting_obj["power_read"].size() > 0) {
+            power_read_pin = setting_obj["power_read"][0].as<signed int>();
+        }
+        if (setting_obj["power_read"].size() > 1) {
+            power_flag_pin = setting_obj["power_read"][1].as<signed int>();
+        }
     }
 
     // IOエキスパンダピン
@@ -1391,6 +1407,21 @@ void AzCommon::pin_setup() {
         
     }
 
+    // 動作電圧チェック用ピン
+    if (power_read_pin >= 0) { // 電圧を読み込むピン
+        i = this->get_adc_num(power_read_pin); // adc1か adc2か
+        if (i == 1) {
+            adc1_config_width(ADC_WIDTH_12Bit);
+            adc1_config_channel_atten(this->get_channel_1(power_read_pin), ADC_ATTEN_11db);
+        } else if (i == 2) {
+            // adc2_config_width(ADC_WIDTH_12Bit); // 2の方は電圧取得時にBIT数を指定する
+            adc2_config_channel_atten(this->get_channel_2(power_read_pin), ADC_ATTEN_11db);
+        }
+    }
+    if (power_flag_pin >= 0) { // 電圧を読み込む時のON/OFFを制御するピン
+        pinMode(power_flag_pin, OUTPUT);
+    }
+
     if (key_input_length > KEY_INPUT_MAX) key_input_length = KEY_INPUT_MAX;
     ESP_LOGD(LOG_TAG, "key length : %D\r\n", key_input_length);
     // 打鍵数リセット
@@ -1400,6 +1431,67 @@ void AzCommon::pin_setup() {
     this->key_count_total = 0;
 }
 
+// GPIOの番号からADCのチャネルを取得する
+adc1_channel_t AzCommon::get_channel_1(int gpio_no) {
+    // 参考 通常のESP32 https://docs.espressif.com/projects/esp-idf/zh_CN/latest/esp32/api-reference/peripherals/adc.html
+    if (gpio_no == 36) return ADC1_CHANNEL_0;
+    if (gpio_no == 37) return ADC1_CHANNEL_1;
+    if (gpio_no == 38) return ADC1_CHANNEL_2;
+    if (gpio_no == 39) return ADC1_CHANNEL_3;
+    if (gpio_no == 32) return ADC1_CHANNEL_4;
+    if (gpio_no == 33) return ADC1_CHANNEL_5;
+    if (gpio_no == 34) return ADC1_CHANNEL_6;
+    if (gpio_no == 35) return ADC1_CHANNEL_7;
+    return ADC1_CHANNEL_0; // ADCが無いピンを指定されたらとりあえずgpio36を返しとく
+}
+
+// GPIOの番号からADCのチャネルを取得する
+adc2_channel_t AzCommon::get_channel_2(int gpio_no) {
+    // 参考 通常のESP32 https://docs.espressif.com/projects/esp-idf/zh_CN/latest/esp32/api-reference/peripherals/adc.html
+    if (gpio_no == 4) return ADC2_CHANNEL_0;
+    if (gpio_no == 0) return ADC2_CHANNEL_1;
+    if (gpio_no == 2) return ADC2_CHANNEL_2;
+    if (gpio_no == 15) return ADC2_CHANNEL_3;
+    if (gpio_no == 13) return ADC2_CHANNEL_4;
+    if (gpio_no == 12) return ADC2_CHANNEL_5;
+    if (gpio_no == 14) return ADC2_CHANNEL_6;
+    if (gpio_no == 27) return ADC2_CHANNEL_7;
+    if (gpio_no == 25) return ADC2_CHANNEL_8;
+    if (gpio_no == 26) return ADC2_CHANNEL_9;
+    return ADC2_CHANNEL_0; // ADCが無いピンを指定されたらとりあえずgpio4を返しとく
+}
+
+// GPIOの番号からADC1かADC2かを返す
+int AzCommon::get_adc_num(int gpio_no) {
+    if (gpio_no == 36 || gpio_no == 37 || gpio_no == 38 || gpio_no == 39 
+        || gpio_no == 32 || gpio_no == 33 || gpio_no == 34 || gpio_no == 35) return 1;
+    if (gpio_no == 4 || gpio_no == 0 || gpio_no == 2 || gpio_no == 15 || gpio_no == 13 || gpio_no == 12 
+        || gpio_no == 14 || gpio_no == 27 || gpio_no == 25 || gpio_no == 26) return 1;
+    return 0;
+}
+
+// 電源電圧を取得
+int AzCommon::get_power_vol() {
+    int i, r;
+    // ON/OFFを制御するピンが指定されていればONにする
+    if (power_flag_pin >= 0) {
+        digitalWrite(power_flag_pin, HIGH);
+        delay(10);
+    }
+    // 電圧を読み込む
+    i = this->get_adc_num(power_read_pin); // adc1か adc2か
+    r = 4095; // デフォルトはMAXにしとく
+    if (i == 1) {
+        r = adc1_get_raw(this->get_channel_1(power_read_pin));
+    } else if (i == 2) {
+        adc2_get_raw(this->get_channel_2(power_read_pin), ADC_WIDTH_BIT_12, &r);
+    }
+    // ON/OFFを制御するピンが指定されていればOFFにする
+    if (power_flag_pin >= 0) {
+        digitalWrite(power_flag_pin, LOW);
+    }
+    return r;
+}
 
 // レイヤーが存在するか確認
 bool AzCommon::layers_exists(int layer_no) {

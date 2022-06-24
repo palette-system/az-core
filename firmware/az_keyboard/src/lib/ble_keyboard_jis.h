@@ -189,6 +189,154 @@ const uint8_t _hidReportDescriptorDefault[] PROGMEM = {
 };
 
 
+const unsigned short _asciimap[] PROGMEM =
+{
+  // 0x00
+  0x00,
+  0x00,
+  0x00,
+  0x00,
+  0x00,
+  0x00,
+  0x00,
+  0x00,
+  0x00,
+  0x00,
+  0x28,
+  0x00,
+  0x00,
+  0x00,
+  0x00,
+  0x00,
+
+  // 0x10
+  0x00,
+  0x00,
+  0x00,
+  0x00,
+  0x00,
+  0x00,
+  0x00,
+  0x00,
+  0x00,
+  0x00,
+  0x00,
+  0x00,
+  0x00,
+  0x00,
+  0x00,
+  0x00,
+
+  // 0x20
+  0x2c, // ' '
+  0x1e | JIS_SHIFT, // !
+  0x1f | JIS_SHIFT, // "
+  0x20 | JIS_SHIFT, // #
+  0x21 | JIS_SHIFT, // $
+  0x22 | JIS_SHIFT, // %
+  0x23 | JIS_SHIFT, // &
+  0x24 | JIS_SHIFT, // '
+  0x25 | JIS_SHIFT, // (
+  0x26 | JIS_SHIFT, // )
+  0x34 | JIS_SHIFT, // *
+  0x33 | JIS_SHIFT, // +
+  0x36, // ,
+  0x2d, // -
+  0x37, // .
+  0x38, // /
+
+  // 0x30
+  0x27, // 0
+  0x1e, // 1
+  0x1f, // 2
+  0x20, // 3
+  0x21, // 4
+  0x22, // 5
+  0x23, // 6
+  0x24, // 7
+  0x25, // 8
+  0x26, // 9
+  0x34, // :
+  0x33, // ;
+  0x36 | JIS_SHIFT, // <
+  0x2d | JIS_SHIFT, // =
+  0x37 | JIS_SHIFT, // >
+  0x38 | JIS_SHIFT, // ?
+
+  // 0x40
+  0x2f, // @
+  0x04 | JIS_SHIFT, // A
+  0x05 | JIS_SHIFT, // B
+  0x06 | JIS_SHIFT, // C
+  0x07 | JIS_SHIFT, // D
+  0x08 | JIS_SHIFT, // E
+  0x09 | JIS_SHIFT, // F
+  0x0a | JIS_SHIFT, // G
+  0x0b | JIS_SHIFT, // H
+  0x0c | JIS_SHIFT, // I
+  0x0d | JIS_SHIFT, // J
+  0x0e | JIS_SHIFT, // K
+  0x0f | JIS_SHIFT, // L
+  0x10 | JIS_SHIFT, // M
+  0x11 | JIS_SHIFT, // N
+  0x12 | JIS_SHIFT, // O
+  
+  // 0x50
+  0x13 | JIS_SHIFT, // P
+  0x14 | JIS_SHIFT, // Q
+  0x15 | JIS_SHIFT, // R
+  0x16 | JIS_SHIFT, // S
+  0x17 | JIS_SHIFT, // T
+  0x18 | JIS_SHIFT, // U
+  0x19 | JIS_SHIFT, // V
+  0x1a | JIS_SHIFT, // W
+  0x1b | JIS_SHIFT, // X
+  0x1c | JIS_SHIFT, // Y
+  0x1d | JIS_SHIFT, // Z
+  0x30, // [
+  0x89, // yen
+  0x32, // ]
+  0x2e, // ^
+  0x87 | JIS_SHIFT, // _
+
+  // 0x60
+  0x2f | JIS_SHIFT, // `
+  0x04, // a
+  0x05, // b
+  0x06, // c
+  0x07, // d
+  0x08, // e
+  0x09, // f
+  0x0a, // g
+  0x0b, // h
+  0x0c, // i
+  0x0d, // j
+  0x0e, // k
+  0x0f, // l
+  0x10, // m
+  0x11, // n
+  0x12, // o
+
+  // 0x70
+  0x13, // p
+  0x14, // q
+  0x15, // r
+  0x16, // s
+  0x17, // t
+  0x18, // u
+  0x19, // v
+  0x1a, // w
+  0x1b, // x
+  0x1c, // y
+  0x1d, // z
+  0x30 | JIS_SHIFT, // {
+  0x89 | JIS_SHIFT, // |
+  0x32 | JIS_SHIFT, // }
+  0x2e | JIS_SHIFT, // ~
+  
+  0       // DEL
+};
+
 
 // BLEキーボードクラス
 class BleKeyboardJIS
@@ -229,7 +377,6 @@ class BleKeyboardJIS
     uint8_t _MouseButtons; // マウスボタン情報
     std::string deviceManufacturer; // 会社名
     std::string deviceName; // デバイス名
-    unsigned short *_asciimap; // asciiマップ jis
     static void taskServer(void* pvParameter);
 
     /* メソッド */
