@@ -1409,14 +1409,7 @@ void AzCommon::pin_setup() {
 
     // 動作電圧チェック用ピン
     if (power_read_pin >= 0) { // 電圧を読み込むピン
-        i = this->get_adc_num(power_read_pin); // adc1か adc2か
-        if (i == 1) {
-            adc1_config_width(ADC_WIDTH_12Bit);
-            adc1_config_channel_atten(this->get_channel_1(power_read_pin), ADC_ATTEN_11db);
-        } else if (i == 2) {
-            // adc2_config_width(ADC_WIDTH_12Bit); // 2の方は電圧取得時にBIT数を指定する
-            adc2_config_channel_atten(this->get_channel_2(power_read_pin), ADC_ATTEN_11db);
-        }
+        this->pinmode_analog(power_read_pin);
     }
     if (power_flag_pin >= 0) { // 電圧を読み込む時のON/OFFを制御するピン
         pinMode(power_flag_pin, OUTPUT);
@@ -1429,6 +1422,31 @@ void AzCommon::pin_setup() {
         this->key_count[i] = 0;
     }
     this->key_count_total = 0;
+}
+
+// アナログ入力ピン初期化
+void AzCommon::pinmode_analog(int gpio_no) {
+    int i;
+    i = this->get_adc_num(gpio_no); // adc1か adc2か
+    if (i == 1) {
+        adc1_config_width(ADC_WIDTH_12Bit);
+        adc1_config_channel_atten(this->get_channel_1(gpio_no), ADC_ATTEN_11db);
+    } else if (i == 2) {
+        // adc2_config_width(ADC_WIDTH_12Bit); // 2の方は電圧取得時にBIT数を指定する
+        adc2_config_channel_atten(this->get_channel_2(gpio_no), ADC_ATTEN_11db);
+    }
+}
+
+// アナログピンの入力を取得
+int AzCommon::analog_read(int gpio_no) {
+    int i, r = -1;
+    i = this->get_adc_num(gpio_no); // adc1か adc2か
+    if (i == 1) {
+        r = adc1_get_raw(this->get_channel_1(gpio_no));
+    } else if (i == 2) {
+        adc2_get_raw(this->get_channel_2(gpio_no), ADC_WIDTH_BIT_12, &r);
+    }
+    return r;
 }
 
 // GPIOの番号からADCのチャネルを取得する
@@ -1472,20 +1490,14 @@ int AzCommon::get_adc_num(int gpio_no) {
 
 // 電源電圧を取得
 int AzCommon::get_power_vol() {
-    int i, r;
+    int r;
     // ON/OFFを制御するピンが指定されていればONにする
     if (power_flag_pin >= 0) {
         digitalWrite(power_flag_pin, HIGH);
         delay(10);
     }
     // 電圧を読み込む
-    i = this->get_adc_num(power_read_pin); // adc1か adc2か
-    r = 4095; // デフォルトはMAXにしとく
-    if (i == 1) {
-        r = adc1_get_raw(this->get_channel_1(power_read_pin));
-    } else if (i == 2) {
-        adc2_get_raw(this->get_channel_2(power_read_pin), ADC_WIDTH_BIT_12, &r);
-    }
+    r = this->analog_read(power_read_pin);
     // ON/OFFを制御するピンが指定されていればOFFにする
     if (power_flag_pin >= 0) {
         digitalWrite(power_flag_pin, LOW);
