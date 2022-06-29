@@ -130,7 +130,6 @@ short i2copt_len;
 
 // 動作電圧チェック用ピン
 int8_t power_read_pin; // 電圧を読み込むピン
-int8_t power_flag_pin; // 電圧を読み込む時のON/OFFを制御するピン
 
 
 // ステータス用LED点滅
@@ -622,14 +621,8 @@ void AzCommon::load_setting_json() {
 
     // 動作電圧チェック用ピン
     power_read_pin = -1;
-    power_flag_pin = -1;
     if (setting_obj.containsKey("power_read")) {
-        if (setting_obj["power_read"].size() > 0) {
-            power_read_pin = setting_obj["power_read"][0].as<signed int>();
-        }
-        if (setting_obj["power_read"].size() > 1) {
-            power_flag_pin = setting_obj["power_read"][1].as<signed int>();
-        }
+        power_read_pin = setting_obj["power_read"].as<signed int>();
     }
 
     // IOエキスパンダピン
@@ -1408,12 +1401,12 @@ void AzCommon::pin_setup() {
     }
 
     // 動作電圧チェック用ピン
+    power_read_pin = 36;
     if (power_read_pin >= 0) { // 電圧を読み込むピン
         this->pinmode_analog(power_read_pin);
     }
-    if (power_flag_pin >= 0) { // 電圧を読み込む時のON/OFFを制御するピン
-        pinMode(power_flag_pin, OUTPUT);
-    }
+    pinMode(32, OUTPUT_OPEN_DRAIN);
+    digitalWrite(32, 1);
 
     if (key_input_length > KEY_INPUT_MAX) key_input_length = KEY_INPUT_MAX;
     ESP_LOGD(LOG_TAG, "key length : %D\r\n", key_input_length);
@@ -1442,7 +1435,7 @@ int AzCommon::analog_read(int gpio_no) {
     int i, r = -1;
     i = this->get_adc_num(gpio_no); // adc1か adc2か
     if (i == 1) {
-        r = adc1_get_raw(this->get_channel_1(gpio_no));
+        r = adc1_get_voltage(this->get_channel_1(gpio_no));
     } else if (i == 2) {
         adc2_get_raw(this->get_channel_2(gpio_no), ADC_WIDTH_BIT_12, &r);
     }
@@ -1484,25 +1477,14 @@ int AzCommon::get_adc_num(int gpio_no) {
     if (gpio_no == 36 || gpio_no == 37 || gpio_no == 38 || gpio_no == 39 
         || gpio_no == 32 || gpio_no == 33 || gpio_no == 34 || gpio_no == 35) return 1;
     if (gpio_no == 4 || gpio_no == 0 || gpio_no == 2 || gpio_no == 15 || gpio_no == 13 || gpio_no == 12 
-        || gpio_no == 14 || gpio_no == 27 || gpio_no == 25 || gpio_no == 26) return 1;
+        || gpio_no == 14 || gpio_no == 27 || gpio_no == 25 || gpio_no == 26) return 2;
     return 0;
 }
 
 // 電源電圧を取得
 int AzCommon::get_power_vol() {
-    int r;
-    // ON/OFFを制御するピンが指定されていればONにする
-    if (power_flag_pin >= 0) {
-        digitalWrite(power_flag_pin, HIGH);
-        delay(10);
-    }
     // 電圧を読み込む
-    r = this->analog_read(power_read_pin);
-    // ON/OFFを制御するピンが指定されていればOFFにする
-    if (power_flag_pin >= 0) {
-        digitalWrite(power_flag_pin, LOW);
-    }
-    return r;
+    return this->analog_read(power_read_pin);
 }
 
 // レイヤーが存在するか確認

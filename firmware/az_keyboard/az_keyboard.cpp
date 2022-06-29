@@ -267,18 +267,13 @@ void AzKeyboard::send_string(char *send_char) {
     // 全て離す
     bleKeyboard.releaseAll();
     while (send_char[i] > 0) {
-        // 連続して同じ文字の入力だったら一回離す
-        if (i > 0 && send_char[i] == send_char[i - 1]) {
-            bleKeyboard.releaseAll();
-            delay(30);
-        }
         // 指定したキーだけ押す
         bleKeyboard.press_set(send_char[i]);
-        delay(30);
+        delay(50);
+        bleKeyboard.releaseAll();
+        delay(50);
         i++;
     }
-    // 全て離す
-    bleKeyboard.releaseAll();
 }
 
 // キーが押された時の処理
@@ -658,13 +653,18 @@ void AzKeyboard::loop_exec(void) {
     common_cls.key_old_copy();
 
     delay(5);
-/*
+    /*
+    while (true) {
+      bleKeyboard.mouse_move(1, 0, 0, 0);
+      delay(20000);
+    }
+    char instr[64];
     while (true) {
         sprintf(instr, "%d %d\n", common_cls.get_power_vol(), millis() );
         send_string(instr);
         delay(20000);
     }
-*/
+    */
 
   }
 }

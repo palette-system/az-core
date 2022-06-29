@@ -300,7 +300,6 @@ extern short i2copt_len;
 
 // 動作電圧チェック用ピン
 extern int8_t power_read_pin; // 電圧を読み込むピン
-extern int8_t power_flag_pin; // 電圧を読み込む時のON/OFFを制御するピン
 
 // rgb_led制御用クラス
 extern Neopixel rgb_led_cls;
