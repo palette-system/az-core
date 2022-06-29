@@ -89,7 +89,7 @@ press_mouse_data press_mouse_list[PRESS_MOUSE_MAX];
 bool mouse_scroll_flag;
 
 // aztoolで設定中かどうか
-bool aztool_mode_flag;
+uint8_t aztool_mode_flag;
 
 // オールクリア送信フラグ
 int press_key_all_clear;
@@ -274,7 +274,7 @@ void AzCommon::common_start() {
     mouse_scroll_flag = false;
     if (AZ_DEBUG_MODE) Serial.begin(115200);
     // aztoolで作業中かどうか
-    aztool_mode_flag = false;
+    aztool_mode_flag = 0;
     // remap用 キー入力テスト中フラグ
     remap_input_test = 0;
     // キーボードのステータス

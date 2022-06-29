@@ -341,7 +341,7 @@ extern press_mouse_data press_mouse_list[PRESS_MOUSE_MAX];
 extern bool mouse_scroll_flag;
 
 // aztoolで設定中かどうか
-extern bool aztool_mode_flag;
+extern uint8_t aztool_mode_flag;
 
 // オールクリア送信フラグ
 extern int press_key_all_clear;
