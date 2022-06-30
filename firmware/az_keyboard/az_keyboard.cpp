@@ -652,6 +652,11 @@ void AzKeyboard::loop_exec(void) {
     // 現在のキーの状態を前回部分にコピー
     common_cls.key_old_copy();
 
+    // eztoolツールI2Cオプション設定中はループ処理をしない(I2Cの読み込みが走っちゃうと落ちるから)
+    while (aztool_mode_flag == 1) {
+        delay(100);
+    }
+
     // aztool入力テスト中はキー入力の読み込みだけループ
     while (aztool_mode_flag == 2) {
         // 現在のキーの状態を取得
