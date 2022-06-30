@@ -722,13 +722,12 @@ void RemapOutputCallbacks::onWrite(NimBLECharacteristic* me) {
 			// キーの入力状態取得
 			// 結果コマンドの準備
 			send_buf[0] = id_read_key; // キーの入力状態
-			for (i=1; i<32; i++) send_buf[i] = 0x00; // 残りのデータを0詰め
+			send_buf[1] = key_input_length & 0xff; // キーの数
+			for (i=2; i<32; i++) send_buf[i] = 0x00; // 残りのデータを0詰め
 			// 結果コマンドに入力データを入れていく
 			j = 0;
-			s = 1;
+			s = 2;
 			for (i=0; i<key_input_length; i++) {
-				if (common_cls.input_key[i]) send_buf[s]++;
-				j++;
 				if (j == 8) {
 					j = 0;
 					s++;
@@ -736,7 +735,10 @@ void RemapOutputCallbacks::onWrite(NimBLECharacteristic* me) {
 					send_buf[s] = send_buf[s] << 1;
 				}
 				if (s > 31) break;
+				if (common_cls.input_key[i]) send_buf[s]++;
+				j++;
 			}
+			if (j > 0 && j < 8) send_buf[s] = send_buf[s] << (8 - j);
 			// 結果を送信
 			this->sendRawData(send_buf, 32);
 			return;
