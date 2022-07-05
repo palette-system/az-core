@@ -5,7 +5,6 @@
 	"wifi": [],
 	"vendorId": "0xe502",
 	"productId": "0x0200",
-	"status_pin": -1,
 	"status_rgb_pin": 27,
 	"led_num": [],
 	"key_matrix": [],
