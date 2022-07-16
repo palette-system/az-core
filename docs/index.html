@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<title>パレットシステム AZ-M5ortho インフォメーション</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="css/style.css">
+<script src="js/fixmenu_pagetop.js"></script>
+<script language="JavaScript" src="./js/utilities.js"></script>
+<script language="JavaScript" src="./js/esptool.js"></script>
+<script language="JavaScript" src="./js/az_esploader.js"></script>
+<!--[if lt IE 9]>
+<script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+<script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+<![endif]-->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+<script>
+var az = {};
+var espTool;
+var write_flag = false;
+
+az.info_div_id = "#write_info";
+
+// 初期化処理
+az.init = function() {
+	// EspLoader初期化
+	espTool = new AzEspLoader({
+		"updateProgress": az.updateProgress, // アップロードステータス取得
+		"logMsg": az.logMsg // 動作ログ取得
+	});
+};
+
+// アップロードステータス
+az.updateProgress = function(part, percentage) {
+	$(az.info_div_id).html("ステータス： writing at ... " +  part + " - " + percentage + " %");
+};
+
+// 動作ログ
+az.logMsg = function(text) {
+	if (!text) {
+		$(az.info_div_id).html("");
+		return;
+	}
+	$(az.info_div_id).html("ステータス： " + text);
+	console.log("ステータス： " + text);
+};
+
+// ファームウェア書込み
+az.write_firm = async function(bin_data, div_id) {
+	if (write_flag) return;
+	az.info_div_id = div_id;
+	write_flag = true;
+	await espTool.writeFlash(bin_data, 921600);
+	write_flag = false;
+};
+
+$(function(){
+	az.init();
+
+	$('a[href^="#"]').click(function() {
+		var speed = 800;
+		var a_id = $(this).attr("id");
+		var href= $(this).attr("href");
+		var target = $(href == "#" || href == "" ? 'html' : href);
+		if (a_id == "write_firm") return false;
+		var position = target.offset().top;
+		$('body,html').animate({scrollTop:position}, speed, 'swing');
+		return false;
+	});
+	
+	$("#write_firm").click(function() {
+		az.write_firm([
+			{"address": 0x8000, "data": "./data/az_keyboard.ino.partitions.0.1.2.bin"},
+			{"address": 0x10000, "data": "./data/az_keyboard.0.1.2.ino.bin"}
+		], "#write_info");
+		return false;
+	});
+
+
+});
+</script>
+</head>
+
+<body>
+
+<header>
+</header>
+
+<div id="container">
+
+<div id="contents">
+
+<section id="new">
+
+<h2>ドライバ</h2>
+<div class="content_body">
+    <table cellpadding="10"><tr><td valign="top">
+        <img src="./img/driver_download.jpg" width="600" height="191">
+        </td><td valign="top">
+        ライターを使用するにはドライバが必要です。<br>
+        ドライバは下記サイトから「 <b>CP210x_VCP_***</b> 」か「 <b>CH9102_VCP_SER_***</b> 」をダウンロードしてインストールして下さい。<br><br>
+        <b>ESP32 Downloader Kit 商品ページ</b><br><a href="https://docs.m5stack.com/en/accessory/esp32_downloader_kit" target="_blank">https://docs.m5stack.com/en/accessory/esp32_downloader_kit</a><br>
+        <br><br>
+        ※ 商品ページの下の方にドライバのダウンロードリンクがあるのでそちらからダウンロードして下さい。<br>
+        ※ ロットにより CP2104 か CH9102 のどちらかが使用されている様で、うまく行かない場合は両方をインストールして下さい。<br><br>
+    </td></tr></table>
+</div>
+<br><br>
+
+
+<h2>PCとの接続</h2>
+<div class="content_body">
+    <table cellpadding="10"><tr><td valign="top">
+    <img src="./img/writer_600.jpg" width="600" height="381">
+    </td><td valign="top">
+    AZ-COREの右横のピンソケットにライターを差し込んで下さい。<br>
+    ライターは表裏あるので、写真と同じよう実装面が上になるようにして下さい。<br>
+    ライターのUSBコネクタからPCへ接続します。<br><br>
+    ※ AZ-CORE本体のUSBコネクタは充電用なのでそのままPCに刺しても認識しません。<br>
+    ※ AZ-CORE本体のUSBコネクタと干渉するので完全には刺さりませんがその状態で大丈夫です。<br>
+    </td></tr></table>
+</div>
+<br><br>
+
+<h2>ファームウェア</h2>
+<div class="content_body">
+<br>
+下記ボタンを押すと、USB接続しているAZ-COREへファームウェアが書き込まれます。<br>
+<br>
+一番最初の書き込みはROMの中を初期化するので、書込み終了後起動するまで1分半ほどかかりますが、そのままお待ち下さい。<br><br>
+
+<a id="write_firm" href="#write_firm" class="link_btn">　Version　0.1.2　書込み</a><br>
+<div id="write_info"></div>
+<br><br>
+
+
+※ ブラウザは Chrome を使用して下さい。<br>
+※ 書込み中はブラウザを閉じないで下さい。<br>
+※ 書込みには Adafruit_WebSerial_ESPTool を使用しています。
+
+
+
+<br><br>
+<h2>キーマップの変更</h2>
+<div class="content_body">
+こちらの<b>AZTOOL</b>から変更して下さい。<br><br>
+　→ <a href='https://palette-system.github.io/aztool/' target='_blank'>https://palette-system.github.io/aztool/</a>
+</div>
+
+
+</section>
+<!--/#new-->
+
+
+
+<!--ページの上部に戻る「↑」ボタン-->
+<p class="nav-fix-pos-pagetop"><a href="#">↑</a></p>
+
+</body>
+</html>
