@@ -6,6 +6,14 @@ azesp.espStub = false;
 azesp.ajax_status = 0;
 azesp.download_data = {};
 
+azesp.info_div = "";
+
+azesp.log = function(msg) {
+    console.log(msg);
+    if (azesp.info_div) {
+        $("#"+azesp.info_div).html(msg);
+    }
+};
 
 azesp.formatMacAddr = function(macAddr) {
   return macAddr
@@ -14,26 +22,27 @@ azesp.formatMacAddr = function(macAddr) {
 };
 
 // 接続
-azesp.write_firm = async function(flash_list) {
-    console.log("clickConnect: start");
+azesp.write_firm = async function(flash_list, write_speed, info_id) {
+    let baudrate = (write_speed)? write_speed: 115200;
+    if (info_id) azesp.info_div = info_id;
     let esptoolMod = await import("./esptool/index.js");
-    let esploader = await esptoolMod.connect({
-        log: function(msg) { console.log(msg); },
-        debug: function(msg) { console.log(msg); },
-        error: function(msg) { console.log(msg); },
-    });
     try {
+        let esploader = await esptoolMod.connect({
+            log: azesp.log,
+            debug: azesp.log,
+            error: azesp.log,
+        });
         await esploader.initialize();
 
-        console.log("Connected to " + esploader.chipName);
-        console.log("MAC Address: " + azesp.formatMacAddr(esploader.macAddr()));
+        azesp.log("Connected to " + esploader.chipName);
+        azesp.log("MAC Address: " + azesp.formatMacAddr(esploader.macAddr()));
 
         espStub = await esploader.runStub();
         espStub.addEventListener("disconnect", function() {
             espStub = false;
         });
         // 転送速度設定
-        await espStub.setBaudrate(115200);
+        await espStub.setBaudrate(baudrate);
         // 書込み
         let i;
         for (i in flash_list) {
@@ -41,13 +50,16 @@ azesp.write_firm = async function(flash_list) {
         }
         // 再起動
         await azesp.reboot();
+        await azesp.sleep(1000);
         // 切断
         await esploader.disconnect();
+        await azesp.sleep(1000);
+        if (espStub && espStub.port) espStub.port.close();
+        azesp.log("Write Complated.");
     } catch (err) {
-        await esploader.disconnect();
-        console.error(err);
+        azesp.log("Error : " + err);
+        if (esploader) await esploader.disconnect();
     }
-    console.log("clickConnect: end");
 };
 
 azesp.reboot = async function () {
@@ -69,7 +81,7 @@ azesp.ajaxArrayBuffer = function(src) {
             azesp.download_data[src] = xhr.response;
         } else {
             azesp.ajax_status = 3;
-            console.log("download status : " + xhr.status);
+            azesp.log("Download Status : " + xhr.status);
         }
     }
     xhr.send();
@@ -98,18 +110,18 @@ azesp.write_data = async function(flash_data) {
     // データ取得
     if (typeof flash_data.data == "string") {
           // 文字列ならばURLと判断してURLのファイルを取得してArrayBufferにする
-          console.log("download start : " + flash_data.data);
+          azesp.log("Download Start : " + flash_data.data);
           if (!azesp.download_data[flash_data.data]) azesp.ajaxArrayBuffer(flash_data.data);
           e = 0;
           while (true) {
               if (azesp.download_data[flash_data.data]) break;
               await azesp.sleep(200);
-              if (azesp.ajax_status == 3) throw "download error : " + flash_data.data; // ajax失敗
+              if (azesp.ajax_status == 3) throw "Download Error : " + flash_data.data; // ajax失敗
               e++;
-              if (e > 900) throw "download timeout : " + flash_data.data; // 3分待ってダウンロードできなければエラー
+              if (e > 900) throw "Download Timeout : " + flash_data.data; // 3分待ってダウンロードできなければエラー
           }
           azesp.ajax_status = 0;
-          console.log("download end : " + flash_data.data);
+          azesp.log("Download Complated : " + flash_data.data);
           contents = azesp.download_data[flash_data.data];
     } else if (Array.isArray(flash_data.data)) {
         contents = azesp.arrayToArraybuffer(flash_data.data); // 配列ならArrayBufferに変換
@@ -120,7 +132,7 @@ azesp.write_data = async function(flash_data) {
     await espStub.flashData(
         contents,
         function (bytesWritten, totalBytes) {
-            console.log("write: " + bytesWritten + " / " + totalBytes + " ("+ Math.floor((bytesWritten / totalBytes) * 100) +" %)");
+            azesp.log("Write : " + bytesWritten + " / " + totalBytes + " ("+ Math.floor((bytesWritten / totalBytes) * 100) +" %)");
         },
         flash_data.address
     );
