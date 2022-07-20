@@ -1,0 +1,2 @@
+https://github.com/NabuCasa/esp-web-flasher
+https://unpkg.com/browse/esp-web-flasher@5.1.4/dist/web/
