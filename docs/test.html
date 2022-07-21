@@ -25,8 +25,8 @@ $(function(){
         azesp.write_firm([
             {"address": 0xe000, "data": "./data/boot_app0.bin"},
             {"address": 0x1000, "data": "./data/bootloader_qio_80m.bin"},
-            {"address": 0x10000, "data": "./data/az_keyboard.0.1.2.ino.bin"},
-            {"address": 0x8000, "data": "./data/az_keyboard.ino.partitions.0.1.2.bin"}
+            {"address": 0x10000, "data": "./data/core_tester.ino.bin"},
+            {"address": 0x8000, "data": "./data/core_tester.ino.partitions.bin"}
         ], 921600, "write_info");
     });
 });
@@ -45,10 +45,10 @@ $(function(){
 
 <section id="new">
 
-<h2>ドライバ</h2>
+<h2>動作テストファーム</h2>
 <div class="content_body">
 
-<a id="write_firm" href="#write_firm" class="link_btn">　Version　0.1.2　書込み</a><br>
+<a id="write_firm" href="#write_firm" class="link_btn">書込み</a><br>
 <div id="write_info"></div>
 <br><br>
 
