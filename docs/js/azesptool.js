@@ -56,7 +56,7 @@ azesp.erase_flash = async function(write_speed, info_id) {
         await esploader.disconnect();
         await azesp.sleep(1000);
         if (espStub && espStub.port) espStub.port.close();
-        azesp.log("Write Complated.");
+        azesp.log("Erase Complated.");
 
     } catch (err) {
         azesp.log("Error : " + err);

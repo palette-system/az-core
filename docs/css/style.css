@@ -154,6 +154,7 @@ header #logo img {
 	border: 2px solid #222;	/*枠線の幅、線種、色*/
 	border-radius: 100px;	/*角を丸くする指定。大きめであれば適当で構いません。*/
 	background-color: #fff;
+	cursor: pointer;
 }
 
 .link_btn:hover {
