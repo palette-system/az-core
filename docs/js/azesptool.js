@@ -38,7 +38,16 @@ azesp.erase_flash = async function(write_speed, info_id) {
         azesp.log("MAC Address: " + azesp.formatMacAddr(esploader.macAddr()));
 
         espStub = await esploader.runStub();
-        
+        espStub.addEventListener("disconnect", function() {
+            espStub = false;
+        });
+        // 転送速度設定
+        await espStub.setBaudrate(baudrate);
+        // 削除
+        await espStub.eraseFlash();
+
+    } catch (err) {
+        azesp.log("Error : " + err);
     }
 };
 
