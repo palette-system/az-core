@@ -44,7 +44,19 @@ azesp.erase_flash = async function(write_speed, info_id) {
         // 転送速度設定
         await espStub.setBaudrate(baudrate);
         // 削除
+        azesp.log("Erase Started.");
+        await azesp.sleep(1000);
         await espStub.eraseFlash();
+        await azesp.sleep(1000);
+        // 再起動
+        azesp.log("Reboot Started.");
+        await azesp.reboot();
+        await azesp.sleep(1000);
+        // 切断
+        await esploader.disconnect();
+        await azesp.sleep(1000);
+        if (espStub && espStub.port) espStub.port.close();
+        azesp.log("Write Complated.");
 
     } catch (err) {
         azesp.log("Error : " + err);
@@ -78,7 +90,9 @@ azesp.write_firm = async function(flash_list, write_speed, info_id) {
         for (i in flash_list) {
             await azesp.write_data(flash_list[i]);
         }
+        await azesp.sleep(1000);
         // 再起動
+        azesp.log("Reboot Started.");
         await azesp.reboot();
         await azesp.sleep(1000);
         // 切断
