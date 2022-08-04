@@ -2,11 +2,6 @@
 #include "src/lib/cnc_table.h"
 
 
-// remapに送る用のデータ
-uint8_t  *setting_remap;
-uint16_t  layer_max;
-uint16_t  key_max;
-
 // remap用 キー入力テスト中フラグ
 uint16_t  remap_input_test;
 
@@ -747,8 +742,6 @@ void AzCommon::load_setting_json() {
     // key_input_length = 16 * ioxp_len;
     // キーの設定を取得
     // まずは設定の数を取得
-    layer_max = 0;
-    key_max = (16 * ioxp_len) + direct_len + touch_len;
     this->get_keymap(setting_obj);
 
 
@@ -871,23 +864,22 @@ void AzCommon::get_keymap(JsonObject setting_obj) {
     for (it_l=layers.begin(); it_l!=layers.end(); ++it_l) {
         setting_length += setting_obj["layers"][it_l->key().c_str()]["keys"].size();
     }
-    ESP_LOGD(LOG_TAG, "setting total %D\n", setting_length);
+    // Serial.printf("setting total %D\n", setting_length);
     // 設定数分メモリ確保
-    ESP_LOGD(LOG_TAG, "mmm: %D %D\n", heap_caps_get_free_size(MALLOC_CAP_32BIT), heap_caps_get_free_size(MALLOC_CAP_8BIT) );
+    // Serial.printf("setting_key_press:start: %D %D\n", heap_caps_get_free_size(MALLOC_CAP_32BIT), heap_caps_get_free_size(MALLOC_CAP_8BIT) );
     setting_press = new setting_key_press[setting_length];
-    ESP_LOGD(LOG_TAG, "mmm: %D %D\n", heap_caps_get_free_size(MALLOC_CAP_32BIT), heap_caps_get_free_size(MALLOC_CAP_8BIT) );
+    // Serial.printf("setting_key_press:end: %D %D\n", heap_caps_get_free_size(MALLOC_CAP_32BIT), heap_caps_get_free_size(MALLOC_CAP_8BIT) );
     // キー設定読み込み
     i = 0;
-    layer_max = 0;
     for (it_l=layers.begin(); it_l!=layers.end(); ++it_l) {
         sprintf(lkey, "%S", it_l->key().c_str());
         lnum = split_num(lkey);
-        layer_max++;
         keys = setting_obj["layers"][lkey]["keys"].as<JsonObject>();
         for (it_k=keys.begin(); it_k!=keys.end(); ++it_k) {
             sprintf(kkey, "%S", it_k->key().c_str());
             knum = split_num(kkey);
             // Serial.printf("get_keymap: %S %S [ %D %D ]\n", lkey, kkey, lnum, knum);
+            // Serial.printf("mem: %D %D\n", heap_caps_get_free_size(MALLOC_CAP_32BIT), heap_caps_get_free_size(MALLOC_CAP_8BIT) );
             press_obj = setting_obj["layers"][lkey]["keys"][kkey]["press"].as<JsonObject>();
             setting_press[i].layer = lnum;
             setting_press[i].key_num = knum;
@@ -981,235 +973,6 @@ void AzCommon::get_keymap(JsonObject setting_obj) {
     }
     ESP_LOGD(LOG_TAG, "mmm: %D %D\n", heap_caps_get_free_size(MALLOC_CAP_32BIT), heap_caps_get_free_size(MALLOC_CAP_8BIT) );
 
-    // Remapに送る用のデータ作成
-    int buf_length = layer_max * key_max * 2;
-    // Serial.printf("layer_max: %d    key_max: %d    buf_length: %d\n", layer_max, key_max, buf_length);
-    setting_remap = new uint8_t[buf_length];
-    // バッファ初期化
-    for (i=0; i<buf_length; i++) {
-        setting_remap[i] = 0x00;
-    }
-    // キーデータを格納
-    for (i=0; i<setting_length; i++) {
-        at = setting_press[i].action_type;
-        m = (setting_press[i].layer * key_max * 2) + (setting_press[i].key_num * 2);
-        if (at == 1) {
-            // 通常キー
-            memcpy(&normal_input, setting_press[i].data, sizeof(setting_normal_input));
-            if (normal_input.key_length < 1) continue;
-            s = normal_input.key[0];
-            if (normal_input.hold) {
-                // holdが定義されていたら tap/hold
-                s = normal_input.hold << 8; // 上位8ビットはholdのキー
-                if (normal_input.key_length) s |= normal_input.key[0] & 0xFF; // 下位8ビットはタップのキー
-            } else if (s >= 0xE0 && s <= 0xE7 && normal_input.key_length > 1) {
-                // 1キー目がモデファイアで複数キーが登録してある場合 同時押しと判定
-                s = 0;
-                for (j=0; j<normal_input.key_length; j++) {
-                    k = normal_input.key[j];
-                    if (k == 0xE0) { s |= 0x0100; } // 左Ctrl 
-                    else if (k == 0xE1) { s |= 0x0200; } // 左Shift
-                    else if (k == 0xE2) { s |= 0x0400; } // 左Alt
-                    else if (k == 0xE3) { s |= 0x0800; } // 左GUI
-                    else if (k == 0xE4) { s |= 0x1100; } // 右Ctrl
-                    else if (k == 0xE5) { s |= 0x1200; } // 右Shift
-                    else if (k == 0xE6) { s |= 0x1400; } // 右Alt
-                    else if (k == 0xE7) { s |= 0x1800; } // 右GUI
-                    else { s |= k & 0xFF; } // それ以外は通常キーとして下位8ビットに入れる
-                }
-            } else {
-                // それ以外は通常キー
-                if (s == 0x4001) s = 0xF4; // 左クリック
-                if (s == 0x4002) s = 0xF5; // 右クリック
-                if (s == 0x4004) s = 0xF6; // 中クリック
-                if (s == 0x4005) s = 0xFD; // スクロールボタン
-            }
-            setting_remap[m] = (s >> 8) & 0xff;
-            setting_remap[m + 1] = s & 0xff;
-        } else if (at == 3) {
-            // レイヤー切り替え
-            memcpy(&layer_move_input, setting_press[i].data, sizeof(setting_layer_move));
-            s = layer_move_input.layer_type; // 切り替えのタイプ
-            if (s != 0x50 && s != 0x51 && s != 0x52 && s != 0x53 && s != 0x54 && s != 0x58) s = 0x51; // 不明な指定はMOと判定
-            setting_remap[m] = s;
-            setting_remap[m + 1] = layer_move_input.layer_id;
-        } else if (at == 5) {
-            // マウス移動
-            memcpy(&mouse_move_input, setting_press[i].data, sizeof(setting_mouse_move));
-            s = 0xF0;
-            if (mouse_move_input.y < 0) s = 0xF0;
-            if (mouse_move_input.y > 0) s = 0xF1;
-            if (mouse_move_input.x < 0) s = 0xF2;
-            if (mouse_move_input.x > 0) s = 0xF3;
-            setting_remap[m] = (s >> 8) & 0xff;
-            setting_remap[m + 1] = s & 0xff;
-        } else if (at == 6) {
-            // 暗記ボタン
-            s = 0x3001;
-            setting_remap[m] = (s >> 8) & 0xff;
-            setting_remap[m + 1] = s & 0xff;
-        } else if (at == 7) {
-            // LED 設定ボタン
-            k = *setting_press[i].data;
-            s = 0x00;
-            if (k == 0) s = 0x5cbf; // ON / OFF
-            if (k == 1) s = 0x5cbe; // 明るさアップ
-            if (k == 2) s = 0x5cbd; // 明るさダウン
-            if (k == 3) s = 0x5cc0; // 色変更
-            if (k == 4) s = 0x5cc1; // 光らせ方変更
-            setting_remap[m] = (s >> 8) & 0xff;
-            setting_remap[m + 1] = s & 0xff;
-        } else if (at == 8) {
-            // 打鍵設定ボタン
-            k = *setting_press[i].data;
-            s = 0x00;
-            if (k == 0) s = 0x3010; // サーモグラフ表示
-            if (k == 1) s = 0x3011; // 打鍵数をファイルに保存
-            if (k == 2) s = 0x3012; // 自動保存設定を変更
-            if (k == 3) s = 0x3013; // 打鍵数をファイルに保存
-            setting_remap[m] = (s >> 8) & 0xff;
-            setting_remap[m + 1] = s & 0xff;
-        }
-    }
-    /* REMAP用バッファデバッグ表示
-    Serial.printf("remap_buf (%d):", buf_length);
-    for (i=0; i<buf_length; i++) {
-        Serial.printf(" %02x", setting_remap[i]);
-    }
-    Serial.printf("\n");
-    */
-}
-
-// REMAPで受け取ったデータをJSONデータに書き込む
-void AzCommon::remap_save_setting_json() {
-    // セッティングJSONを保持する領域
-    SpiRamJsonDocument setting_doc(SETTING_JSON_BUF_SIZE);
-    JsonObject setting_obj;
-    int i, j, k, m, h, l, s;
-    JsonObject layer_obj;
-    JsonObject keys_obj;
-    JsonObject key_obj;
-    JsonObject press_obj;
-    JsonObject move_obj;
-    JsonArray keyarray_obj;
-    char lname[32];
-    char kname[32];
-
-    // ファイルオープン
-    File open_file = SPIFFS.open(SETTING_JSON_PATH);
-    if(!open_file) return;
-    // 読み込み＆パース
-    DeserializationError err = deserializeJson(setting_doc, open_file);
-    if (err) return;
-    open_file.close();
-
-    // JSONオブジェクトを保持
-    setting_obj = setting_doc.as<JsonObject>();
-
-    // 入力モードは無変換の日本語キーボード固定
-    setting_obj["keyboard_language"] = 0;
-    keyboard_language = 0;
-
-    // キーマップ情報の配列を作成
-    setting_obj["layers"].clear();
-    for (i=0; i<layer_max; i++) {
-        sprintf(lname, "layer_%d", i);
-        layer_obj = setting_obj["layers"].createNestedObject(lname);
-        layer_obj["name"].set(lname);
-        keys_obj = setting_obj["layers"][lname].createNestedObject("keys");
-        for (j=0; j<key_max; j++) {
-            m = (i * key_max * 2) + (j * 2);
-            h = setting_remap[m];
-            l = setting_remap[m + 1];
-            k = (h << 8) | l;
-            if (k == 0) continue;
-            // Serial.printf("key: layer=%d key=%d mem=%d id=%d\n", i, j, m, k);
-            sprintf(kname, "key_%d", j);
-            key_obj = setting_obj["layers"][lname]["keys"].createNestedObject(kname);
-            press_obj = setting_obj["layers"][lname]["keys"][kname].createNestedObject("press");
-            press_obj["action_type"] = 0;
-            if (k <= 0x00E7) {
-                // 通常キー
-                press_obj["action_type"] = 1; // 通常キー
-                press_obj["repeat_interval"] = 51; // 連打無し
-                keyarray_obj = setting_obj["layers"][lname]["keys"][kname]["press"].createNestedArray("key");
-                keyarray_obj.add(k);
-            } else if ((h >= 0x01 && h <= 0x0F) || (h >= 0x11 && h <= 0x1F)) { // 左モデファイア || 右モデファイア
-                // モデファイア 同時押し
-                press_obj["action_type"] = 1; // 通常キー
-                press_obj["repeat_interval"] = 51; // 連打無し
-                keyarray_obj = setting_obj["layers"][lname]["keys"][kname]["press"].createNestedArray("key");
-                if ((h >> 4) == 0x00) { // 左モデファイア
-                    if (h & 0x01) keyarray_obj.add(0xE0); // 左Ctrl
-                    if (h & 0x02) keyarray_obj.add(0xE1); // 左Shift
-                    if (h & 0x04) keyarray_obj.add(0xE2); // 左Alt
-                    if (h & 0x08) keyarray_obj.add(0xE3); // 左GUI
-                } else if ((h >> 4) == 0x01) { // 右モデファイア
-                    if (h & 0x01) keyarray_obj.add(0xE4); // 右Ctrl
-                    if (h & 0x02) keyarray_obj.add(0xE5); // 右Shift
-                    if (h & 0x04) keyarray_obj.add(0xE6); // 右Alt
-                    if (h & 0x08) keyarray_obj.add(0xE7); // 右GUI
-                }
-                keyarray_obj.add(l); // 下位8ビットを通常キー
-            } else if ((h >= 0x61 && h <= 0x6F) || (h >= 0x71 && h <= 0x7F) || (h >= 0x41 && h <= 0x4F) || h == 0x56) { // 左モデファイア || 右モデファイア || レイヤー || swap?
-                // Tap / Hold
-                press_obj["action_type"] = 1; // 通常キー
-                press_obj["repeat_interval"] = 51; // 連打無し
-                press_obj["hold"] = h; // モデファイア | レイヤー定義
-                keyarray_obj = setting_obj["layers"][lname]["keys"][kname]["press"].createNestedArray("key");
-                keyarray_obj.add(l); // 下位8ビットを通常キー
-            } else if ((h == 0x50 || h == 0x51 || h == 0x52 || h == 0x53 || h == 0x54 || h == 0x58) && l < layer_max) {
-                // レイヤー切り替え
-                press_obj["action_type"] = 3; // レイヤー切り替え
-                press_obj["layer"] = l; // 切り替え先レイヤー
-                press_obj["layer_type"] = h; // 切り替えの種類
-            } else if (k == 0xF0 || k == 0xF1 || k == 0xF2 || k == 0xF3) { // マウス移動↑↓←→
-                press_obj["action_type"] = 5; // マウス移動
-                move_obj = setting_obj["layers"][lname]["keys"][kname]["press"].createNestedObject("move");
-                if (k == 0xF0) { move_obj["x"] = 0; move_obj["y"] = -3; } // 上
-                if (k == 0xF1) { move_obj["x"] = 0; move_obj["y"] = 3; } // 下
-                if (k == 0xF2) { move_obj["x"] = -3; move_obj["y"] = 0; } // 左
-                if (k == 0xF3) { move_obj["x"] = 3; move_obj["y"] = 0; } // 右
-                move_obj["speed"] = 100; // 移動速度
-            } else if (k == 0xF4 || k == 0xF5 || k == 0xF6 || k == 0xFD) { // マウス ボタン1(左クリック)
-                press_obj["action_type"] = 1; // 通常キー
-                press_obj["repeat_interval"] = 51; // 連打無し
-                keyarray_obj = setting_obj["layers"][lname]["keys"][kname]["press"].createNestedArray("key");
-                if (k == 0xF4) s = 0x4001; // 左クリック
-                if (k == 0xF5) s = 0x4002; // 右クリック
-                if (k == 0xF6) s = 0x4004; // 中クリック
-                if (k == 0xFD) s = 0x4005; // スクロールボタン
-                keyarray_obj.add(s);
-            } else if (h == 0x30 && l == 0x01) { // 暗記ボタン
-                press_obj["action_type"] = 6; // 暗記ボタン
-            } else if (h == 0x5C && (l == 0xBD || l == 0xBE || l == 0xBF || l == 0xC0 || l == 0xC1)) { // LED設定ボタン
-                press_obj["action_type"] = 7; // LED設定ボタン
-                if (l == 0xBD) press_obj["led_setting_type"] = 2; // 明るさ ダウン
-                if (l == 0xBE) press_obj["led_setting_type"] = 1; // 明るさ アップ
-                if (l == 0xBF) press_obj["led_setting_type"] = 0; // ON / OFF
-                if (l == 0xC0) press_obj["led_setting_type"] = 3; // カラー変更
-                if (l == 0xC1) press_obj["led_setting_type"] = 4; // 光り方変更
-            } else if (h == 0x30 && l >= 0x10 && l <= 0x13) { // 打鍵設定ボタン
-                press_obj["action_type"] = 8; // 打鍵設定ボタン
-                if (l == 0x10) press_obj["dakagi_settype"] = 0; // サーモグラフ表示
-                if (l == 0x11) press_obj["dakagi_settype"] = 1; // 打鍵数をファイルに保存
-                if (l == 0x12) press_obj["dakagi_settype"] = 2; // 自動保存設定を変更
-                if (l == 0x13) press_obj["dakagi_settype"] = 3; // 打鍵数をファイルに保存
-            }
-        }
-    }
-
-    // 変更した内容をファイルに保存
-    File save_file = SPIFFS.open(SETTING_JSON_PATH, "w");
-    if(!save_file) return;
-    serializeJson(setting_doc, save_file);
-    save_file.close();
-
-    // メモリ上にあるキーマップを解放
-    this->clear_keymap();
-
-    // 新しいキーマップをメモリ上に入れる
-    this->get_keymap(setting_obj);
 }
 
 

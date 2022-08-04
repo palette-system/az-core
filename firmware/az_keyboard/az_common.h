@@ -60,7 +60,7 @@
 
 
 // ファームウェアのバージョン文字
-#define FIRMWARE_VERSION   "000102"
+#define FIRMWARE_VERSION   "000103"
 
 // EEPROMに保存しているデータのバージョン文字列
 #define EEP_DATA_VERSION    "AZM024"
@@ -215,7 +215,6 @@ class AzCommon
         void load_setting_json(); // jsonデータロード
         void clear_keymap(); // キーマップ用に確保しているメモリを解放
         void get_keymap(JsonObject setting_obj); // JSONデータからキーマップの情報を読み込む
-        void remap_save_setting_json(); // REMAPで受け取ったデータをJSONデータに書き込む
         int read_file(char *file_path, String &read_data); // ファイルからデータを読み出す
         int write_file(char *file_path, String &write_data); // ファイルにデータを保存する
         int remove_file(char *file_path); // ファイルを削除する
@@ -361,10 +360,6 @@ extern AzCommon common_cls;
 // 設定JSONオブジェクト
 extern JsonObject setting_obj;
 
-// remapに送る用のデータ
-extern uint8_t  *setting_remap;
-extern uint16_t  layer_max;
-extern uint16_t  key_max;
 
 // remap用 キー入力テスト中フラグ
 extern uint16_t  remap_input_test;

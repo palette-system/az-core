@@ -193,7 +193,6 @@ void RemapOutputCallbacks::onWrite(NimBLECharacteristic* me) {
 
 	// 設定変更がされていて設定変更以外のコマンドが飛んできたら設定を保存
 	if (remap_change_flag && *command_id != 0x05) {
-		common_cls.remap_save_setting_json(); // JSONに保存
 		remap_change_flag = 0;
 	}
 	
@@ -224,9 +223,9 @@ void RemapOutputCallbacks::onWrite(NimBLECharacteristic* me) {
 			break;
 		}
 		case id_dynamic_keymap_set_keycode: { // 0x05 設定した内容を保存
-			m = (remap_buf[1] * key_max * 2) + (remap_buf[3] * 2);
-			setting_remap[m] = remap_buf[4];
-			setting_remap[m + 1] = remap_buf[5];
+			// m = (remap_buf[1] * key_max * 2) + (remap_buf[3] * 2);
+			// setting_remap[m] = remap_buf[4];
+			// setting_remap[m + 1] = remap_buf[5];
 			remap_change_flag = 1;
 			break;
 		}
@@ -258,14 +257,16 @@ void RemapOutputCallbacks::onWrite(NimBLECharacteristic* me) {
             break;
         }
 		case id_dynamic_keymap_get_layer_count: { // 0x11 レイヤー数を送る
-			remap_buf[1] = layer_max;
+			// remap_buf[1] = layer_max;
+			remap_buf[1] = 1;
 			break;
 		}
 		case id_dynamic_keymap_get_buffer: { // 0x12 設定データを送る(レイヤー×ROW×COL×2)
 			uint16_t r_offset = (command_data[0] << 8) | command_data[1];
 			uint16_t r_size   = command_data[2];  // size <= 28
 			for (i=0; i<r_size; i++) {
-				remap_buf[4 + i] = setting_remap[r_offset + i];
+				// remap_buf[4 + i] = setting_remap[r_offset + i];
+				remap_buf[4 + i] = 0x00;
 			}
 			break;
 		}

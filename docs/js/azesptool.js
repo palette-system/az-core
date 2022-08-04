@@ -21,7 +21,28 @@ azesp.formatMacAddr = function(macAddr) {
     .join(":");
 };
 
-// 接続
+// フラッシュ内クリア
+azesp.erase_flash = async function(write_speed, info_id) {
+    let baudrate = (write_speed)? write_speed: 115200;
+    if (info_id) azesp.info_div = info_id;
+    let esptoolMod = await import("./esptool/index.js");
+    try {
+        let esploader = await esptoolMod.connect({
+            log: azesp.log,
+            debug: azesp.log,
+            error: azesp.log,
+        });
+        await esploader.initialize();
+
+        azesp.log("Connected to " + esploader.chipName);
+        azesp.log("MAC Address: " + azesp.formatMacAddr(esploader.macAddr()));
+
+        espStub = await esploader.runStub();
+        
+    }
+};
+
+// 書込み
 azesp.write_firm = async function(flash_list, write_speed, info_id) {
     let baudrate = (write_speed)? write_speed: 115200;
     if (info_id) azesp.info_div = info_id;
