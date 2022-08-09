@@ -152,14 +152,18 @@ struct ioxp_option {
     uint8_t direct_len;
 };
 
-// i2cオプションの設定
-struct i2c_option {
-    uint8_t opt_type; // オプションのタイプ 1: ioエキスパンダキーボード
+struct i2c_ioxp {
     ioxp_option *ioxp; // 使用するIOエキスパンダの設定
     uint8_t ioxp_len; // IOエキスパンダ設定の数
     short map_start; // キー設定の番号開始番号
     short *map; // キーとして読み取る番号の配列
     uint8_t map_len; // マッピング設定の数
+};
+
+// i2cオプションの設定
+struct i2c_option {
+    uint8_t opt_type; // オプションのタイプ 1: ioエキスパンダキーボード
+    uint8_t *data;
 };
 
 // WIFI設定
