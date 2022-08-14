@@ -597,7 +597,6 @@ void AzCommon::load_setting_json() {
     row_len = setting_obj["keyboard_pin"]["row"].size();
     direct_len = setting_obj["keyboard_pin"]["direct"].size();
     touch_len = setting_obj["keyboard_pin"]["touch"].size();
-    direct_list = new short[direct_len];
     col_list = new short[col_len];
     for (i=0; i<col_len; i++) {
         col_list[i] = setting_obj["keyboard_pin"]["col"][i].as<signed int>();
@@ -606,6 +605,7 @@ void AzCommon::load_setting_json() {
     for (i=0; i<row_len; i++) {
         row_list[i] = setting_obj["keyboard_pin"]["row"][i].as<signed int>();
     }
+    direct_list = new short[direct_len];
     for (i=0; i<direct_len; i++) {
         direct_list[i] = setting_obj["keyboard_pin"]["direct"][i].as<signed int>();
     }
@@ -1211,8 +1211,6 @@ void AzCommon::pin_setup() {
     if (power_read_pin >= 0) { // 電圧を読み込むピン
         this->pinmode_analog(power_read_pin);
     }
-    pinMode(32, OUTPUT_OPEN_DRAIN);
-    digitalWrite(32, 1);
 
     if (key_input_length > KEY_INPUT_MAX) key_input_length = KEY_INPUT_MAX;
     ESP_LOGD(LOG_TAG, "key length : %D\r\n", key_input_length);
