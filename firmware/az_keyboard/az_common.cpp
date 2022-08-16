@@ -639,13 +639,17 @@ void AzCommon::load_setting_json() {
     if (setting_obj.containsKey("i2c_option") && setting_obj["i2c_option"].size()) {
         // 有効になっているオプションの数を数える
         k = setting_obj["i2c_option"].size();
+        // Serial.printf("i2c_option size: %D\n", k);
         i2copt_len = 0;
         for (i=0; i<k; i++) {
+            // Serial.printf("i2c_option: check %D\n", i);
             if (setting_obj["i2c_option"][i].containsKey("enable") &&
                     setting_obj["i2c_option"][i]["enable"].as<signed int>() == 1) {
+                // Serial.printf("i2c_option: enable %D\n", i);
                 i2copt_len++;
             }
         }
+        // Serial.printf("i2c_option: enable total %D\n", i2copt_len);
         i2copt = new i2c_option[i2copt_len];
         // オプションのデータを取得
         j = 0;
@@ -659,7 +663,8 @@ void AzCommon::load_setting_json() {
             } else {
                 opt_type = 0;
             }
-            i2copt[i].opt_type = opt_type & 0xff;
+            i2copt[j].opt_type = opt_type & 0xff;
+            // Serial.printf("i2c_option: load %D type %D - %D\n", i, opt_type, i2copt[j].opt_type);
             // マッピング情報の読み込み
             if (opt_type == 1 || opt_type == 2) { // 1 = IOエキスパンダ（MCP23017）/ 2 = Tiny202 ロータリーエンコーダ
                 // キーマッピング設定
@@ -679,8 +684,8 @@ void AzCommon::load_setting_json() {
                 } else {
                     i2cmap_obj.map_start = 0;
                 }
-                i2copt[i].i2cmap = new i2c_map;
-                memcpy(i2copt[i].i2cmap, &i2cmap_obj, sizeof(i2c_map));
+                i2copt[j].i2cmap = new i2c_map;
+                memcpy(i2copt[j].i2cmap, &i2cmap_obj, sizeof(i2c_map));
             }
             // オプション別のデータ読み込み
             if (opt_type == 1) { // 1 = IOエキスパンダ（MCP23017）
@@ -741,8 +746,9 @@ void AzCommon::load_setting_json() {
                 } else {
                     i2cioxp_obj.ioxp_len = 0;
                 }
-                i2copt[i].data = (uint8_t *)new i2c_ioxp;
-                memcpy(i2copt[i].data, &i2cioxp_obj, sizeof(i2c_ioxp));
+                i2copt[j].data = (uint8_t *)new i2c_ioxp;
+                memcpy(i2copt[j].data, &i2cioxp_obj, sizeof(i2c_ioxp));
+                j++;
 
             } else if (opt_type == 2) { // 2 = Tiny202 ロータリーエンコーダ
                 
@@ -756,8 +762,9 @@ void AzCommon::load_setting_json() {
                 } else {
                     i2crotary_obj.rotary_len = 0;
                 }
-                i2copt[i].data = (uint8_t *)new i2c_rotary;
-                memcpy(i2copt[i].data, &i2crotary_obj, sizeof(i2c_rotary));
+                i2copt[j].data = (uint8_t *)new i2c_rotary;
+                memcpy(i2copt[j].data, &i2crotary_obj, sizeof(i2c_rotary));
+                j++;
 
             }
 
@@ -1082,6 +1089,7 @@ int AzCommon::i2c_setup(int p, i2c_option *opt) {
     int set_type[16];
     i2c_map i2cmap_obj;
     i2c_ioxp i2cioxp_obj;
+    // Serial.printf("i2c_setup: opt_type %D\n", opt->opt_type);
     if (opt->opt_type == 1) {
         // IOエキスパンダ
         memcpy(&i2cioxp_obj, opt->data, sizeof(i2c_ioxp));
@@ -1094,6 +1102,7 @@ int AzCommon::i2c_setup(int p, i2c_option *opt) {
                 ioxp_status[x] = 0;
             }
             if (ioxp_status[x] < 1) {
+            // Serial.printf("i2c_setup: begin %D\n", i2cioxp_obj.ioxp[i].addr);
                 if (ioxp_obj[x]->begin_I2C(i2cioxp_obj.ioxp[i].addr, &Wire)) {
                     ioxp_hash[x] = 1;
                     ioxp_status[x] = 1;
@@ -1112,6 +1121,7 @@ int AzCommon::i2c_setup(int p, i2c_option *opt) {
             }
             // ピン初期化
             for (j=0; j<16; j++) {
+            // Serial.printf("i2c_setup: pinMode %D %D\n", j, set_type[j]);
                 ioxp_obj[x]->pinMode(j, set_type[j]);
             }
         }
