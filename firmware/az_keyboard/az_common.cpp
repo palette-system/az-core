@@ -783,6 +783,12 @@ void AzCommon::load_setting_json() {
                 } else {
                     i2cpim447_obj.speed = 0;
                 }
+                // トラックボールの方向
+                if (setting_obj["i2c_option"][i].containsKey("rotate")) {
+                    i2cpim447_obj.rotate = setting_obj["i2c_option"][i]["rotate"].as<signed int>();
+                } else {
+                    i2cpim447_obj.rotate = 0;
+                }
                 i2copt[j].data = (uint8_t *)new i2c_pim447;
                 memcpy(i2copt[j].data, &i2cpim447_obj, sizeof(i2c_pim447));
                 j++;
@@ -1518,7 +1524,6 @@ int AzCommon::i2c_read(int p, i2c_option *opt, char *read_data) {
         }
     } else if (opt->opt_type == 2) {
         // ATTiny202 ロータリーエンコーダー
-        read_data_bit = 8;
         memcpy(&i2crotary_obj, opt->data, sizeof(i2c_rotary));
         memcpy(&i2cmap_obj, opt->i2cmap, sizeof(i2c_map));
         for (i=0; i<i2crotary_obj.rotary_len; i++) {
@@ -1528,13 +1533,23 @@ int AzCommon::i2c_read(int p, i2c_option *opt, char *read_data) {
 
     } else if (opt->opt_type == 3) {
         // 1U トラックボール PIM447
-        read_data_bit = 8;
         memcpy(&i2cpim447_obj, opt->data, sizeof(i2c_pim447));
         memcpy(&i2cmap_obj, opt->i2cmap, sizeof(i2c_map));
         pim447_data_obj = wirelib_cls.read_trackball_pim447(i2cpim447_obj.addr); // 入力情報取得
         // トラックボール操作があればマウス移動リストに追加
-        x = (pim447_data_obj.right - pim447_data_obj.left);
-        y = (pim447_data_obj.down - pim447_data_obj.up);
+        if (i2cpim447_obj.rotate == 1) { // 右が上
+            x = (pim447_data_obj.down - pim447_data_obj.up);
+            y = (pim447_data_obj.left - pim447_data_obj.right);
+        } else if (i2cpim447_obj.rotate == 2) { // 下が上
+            x = (pim447_data_obj.left - pim447_data_obj.right);
+            y = (pim447_data_obj.up - pim447_data_obj.down);
+        } else if (i2cpim447_obj.rotate == 3) { // 左が上
+            x = (pim447_data_obj.up - pim447_data_obj.down);
+            y = (pim447_data_obj.right - pim447_data_obj.left);
+        } else { // それ以外は上が上
+            x = (pim447_data_obj.right - pim447_data_obj.left);
+            y = (pim447_data_obj.down - pim447_data_obj.up);
+        }
         if (x != 0 || y != 0) press_mouse_list_push(0x2000, x, y, i2cpim447_obj.speed);
         // キー入力(クリック)取得
         read_raw[e] = pim447_data_obj.click;

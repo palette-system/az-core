@@ -175,6 +175,7 @@ struct i2c_rotary {
 struct i2c_pim447 {
     uint8_t addr; // PIM447のアドレス
     short speed; // マウス移動速度
+    uint8_t rotate; // マウスの向き
 };
 
 // i2cオプションの設定
