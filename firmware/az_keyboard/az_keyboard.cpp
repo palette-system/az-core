@@ -43,7 +43,7 @@ void AzKeyboard::start_keyboard() {
     common_cls.key_old_copy();
 
     // マウス移動リスト初期化
-    press_mouse_list_clean();
+    common_cls.press_mouse_list_clean();
 
     // バッテリーレベル
     // bleKeyboard.setBatteryLevel(100);
@@ -161,52 +161,6 @@ void AzKeyboard::press_key_list_push(int action_type, int key_num, int key_id, i
 }
 
 
-// マウス移動リストを空にする
-void AzKeyboard::press_mouse_list_clean() {
-    int i;
-    for (i=0; i<PRESS_MOUSE_MAX; i++) {
-        press_mouse_list[i].key_num = -1;
-        press_mouse_list[i].move_x = 0;
-        press_mouse_list[i].move_y = 0;
-        press_mouse_list[i].move_speed = 0;
-        press_mouse_list[i].move_index = 0;
-    }
-}
-
-
-// マウス移動リストに追加
-void AzKeyboard::press_mouse_list_push(int key_num, short move_x, short move_y, short move_speed) {
-    int i;
-    for (i=0; i<PRESS_MOUSE_MAX; i++) {
-        // データが入っていれば次
-        if (press_mouse_list[i].key_num >= 0) continue;
-        // 空いていればデータを入れる
-        press_mouse_list[i].key_num = key_num;
-        press_mouse_list[i].move_x = move_x;
-        press_mouse_list[i].move_y = move_y;
-        press_mouse_list[i].move_speed = move_speed;
-        press_mouse_list[i].move_index = 0;
-        break;
-    }
-}
-
-
-// マウス移動リストから削除
-void AzKeyboard::press_mouse_list_remove(int key_num) {
-    int i;
-    for (i=0; i<PRESS_MOUSE_MAX; i++) {
-        // 該当のキーで無ければ何もしない
-        if (press_mouse_list[i].key_num != key_num) continue;
-        // 該当のキーのデータ削除
-        press_mouse_list[i].key_num = -1;
-        press_mouse_list[i].move_x = 0;
-        press_mouse_list[i].move_y = 0;
-        press_mouse_list[i].move_speed = 0;
-        press_mouse_list[i].move_index = 0;
-    }
-}
-
-
 // マウス移動処理
 void AzKeyboard::move_mouse_loop() {
     int i;
@@ -238,6 +192,8 @@ void AzKeyboard::move_mouse_loop() {
         }
         // index をカウント
         if (press_mouse_list[i].move_index < 1000) press_mouse_list[i].move_index++;
+        // トラックボールからの入力は1度送ったらすぐ削除
+        if (press_mouse_list[i].key_num == 0x2000) common_cls.press_mouse_list_remove(0x2000);
     }
 }
 
@@ -352,7 +308,7 @@ void AzKeyboard::key_down_action(int key_num) {
     } else if (action_type == 3) {
         setting_layer_move layer_move_input;
         // マウス移動リストクリア(移動中にレイヤーが切り替わると移動したままになってしまうので)
-        press_mouse_list_clean();
+        common_cls.press_mouse_list_clean();
         // レイヤーの切り替え
         memcpy(&layer_move_input, key_set.data, sizeof(setting_layer_move));
         // Serial.printf("dw: %d %d %02x %d\n", select_layer_no, key_num, layer_move_input.layer_type, layer_move_input.layer_id);
@@ -375,7 +331,7 @@ void AzKeyboard::key_down_action(int key_num) {
         // マウス移動
         setting_mouse_move mouse_move_input;
         memcpy(&mouse_move_input, key_set.data, sizeof(setting_mouse_move));
-        press_mouse_list_push(key_num,
+        common_cls.press_mouse_list_push(key_num,
             mouse_move_input.x,
             mouse_move_input.y,
             mouse_move_input.speed);
@@ -470,7 +426,7 @@ void AzKeyboard::key_up_action(int key_num) {
             }
         } else if (action_type == 5) {
             // マウス移動ボタン
-            press_mouse_list_remove(key_num); // 移動中リストから削除
+            common_cls.press_mouse_list_remove(key_num); // 移動中リストから削除
         } else if (action_type == 6) {
             // 暗記ボタン
             ankeycls.ankey_up(press_key_list[i].layer_id, key_num);
@@ -553,7 +509,7 @@ void AzKeyboard::press_data_reset() {
     }
     bleKeyboard.releaseAll();
     press_key_all_clear = -1;
-    this->press_mouse_list_clean();
+    common_cls.press_mouse_list_clean();
 }
 
 // 押されたキーの情報クリア

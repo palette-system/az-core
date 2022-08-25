@@ -16,7 +16,7 @@
 
 #include "src/lib/neopixel.h"
 #include "src/lib/HTTPClient_my.h"
-
+#include "src/lib/wirelib.h"
 
 // キーボード
 #include "src/lib/setting_json_default.h"
@@ -77,7 +77,7 @@
 // 打鍵数を自動保存するかどうかの設定を保存するファイルパス
 #define  KEY_COUNT_AUTO_SAVE_PATH  "/key_count_auto_save"
 
-#define  AZ_DEBUG_MODE 1
+#define  AZ_DEBUG_MODE 0
 
 // 今押されているボタンの情報
 struct press_key_data {
@@ -152,20 +152,29 @@ struct ioxp_option {
     uint8_t direct_len;
 };
 
+// I2Cオプション　マップ設定
 struct i2c_map {
     short map_start; // キー設定の番号開始番号
     short *map; // キーとして読み取る番号の配列
     uint8_t map_len; // マッピング設定の数
 };
 
+// I2Cオプション　IOエキスパンダ（MCP23017
 struct i2c_ioxp {
     ioxp_option *ioxp; // 使用するIOエキスパンダの設定
     uint8_t ioxp_len; // IOエキスパンダ設定の数
 };
 
+// I2Cオプション　Tiny202　ロータリエンコーダ
 struct i2c_rotary {
-    uint8_t *rotary;
-    uint8_t rotary_len;
+    uint8_t *rotary; // ロータリーエンコーダのアドレス
+    uint8_t rotary_len; // ロータリーエンコーダの数
+};
+
+// I2Cオプション　1Uトラックボール　PIM447
+struct i2c_pim447 {
+    uint8_t addr; // PIM447のアドレス
+    short speed; // マウス移動速度
 };
 
 // i2cオプションの設定
@@ -259,6 +268,9 @@ class AzCommon
         void delete_indexof_all(String check_str); // 指定した文字から始まるファイルすべて削除
         int spiffs_total(void); // ファイル領域合計サイズを取得
         int spiffs_used(void); // 使用しているファイル領域サイズを取得
+        void press_mouse_list_clean(); // マウス移動中リストを空にする
+        void press_mouse_list_push(int key_num, short move_x, short move_y, short move_speed); // マウス移動中リストに追加
+        void press_mouse_list_remove(int key_num); // マウス移動中リストから削除
     
     private:
 
@@ -315,6 +327,9 @@ extern int8_t power_read_pin; // 電圧を読み込むピン
 
 // rgb_led制御用クラス
 extern Neopixel rgb_led_cls;
+
+// I2Cライブラリ用クラス
+extern Wirelib wirelib_cls;
 
 //timer オブジェクト
 extern hw_timer_t *timer;
