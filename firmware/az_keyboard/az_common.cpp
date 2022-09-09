@@ -1558,8 +1558,8 @@ int AzCommon::i2c_read(int p, i2c_option *opt, char *read_data) {
             if (y > 127) y = 127;
             if (y < -127) y = -127;
             if (mouse_scroll_flag) {
-                m = (y == 0)? 0: (y > 0)? 1: (y < 0) -1;
-                n = (x == 0)? 0: (x > 0)? 1: (x < 0) -1;
+                m = (y == 0)? 0: (y > 0)? 1: -1;
+                n = (x == 0)? 0: (x > 0)? 1: -1;
                 press_mouse_list_push(0x2000, 0, 0, m, n, 100);
             } else {
                 press_mouse_list_push(0x2000, x, y, 0, 0, i2cpim447_obj.speed);
