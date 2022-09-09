@@ -60,7 +60,7 @@
 
 
 // ファームウェアのバージョン文字
-#define FIRMWARE_VERSION   "000107"
+#define FIRMWARE_VERSION   "000108"
 
 // EEPROMに保存しているデータのバージョン文字列
 #define EEP_DATA_VERSION    "AZM024"
@@ -97,6 +97,8 @@ struct press_mouse_data {
     short key_num; // キー番号
     short move_x; // X座標
     short move_y; // Y座標
+    short move_wheel; // 縦ホイール
+    short move_hWheel; // 横ホイール
     short move_speed; // 移動速度
     short move_index; // 移動index
 };
@@ -121,6 +123,8 @@ struct setting_normal_input {
 struct setting_mouse_move {
     int16_t x;
     int16_t y;
+    int16_t wheel;
+    int16_t hWheel;
     int16_t speed;
 };
 
@@ -270,7 +274,7 @@ class AzCommon
         int spiffs_total(void); // ファイル領域合計サイズを取得
         int spiffs_used(void); // 使用しているファイル領域サイズを取得
         void press_mouse_list_clean(); // マウス移動中リストを空にする
-        void press_mouse_list_push(int key_num, short move_x, short move_y, short move_speed); // マウス移動中リストに追加
+        void press_mouse_list_push(int key_num, short move_x, short move_y, short move_wheel, short move_hWheel, short move_speed); // マウス移動中リストに追加
         void press_mouse_list_remove(int key_num); // マウス移動中リストから削除
     
     private:

@@ -165,29 +165,24 @@ void AzKeyboard::press_key_list_push(int action_type, int key_num, int key_id, i
 void AzKeyboard::move_mouse_loop() {
     int i;
     int mx, my;
+    int wx, wy;
     for (i=0; i<PRESS_MOUSE_MAX; i++) {
         // 入力無しならば何もしない
         if (press_mouse_list[i].key_num < 0) continue;
         if (press_mouse_list[i].move_speed == 0 && press_mouse_list[i].move_index == 0) {
             // スピード0なら最初の1回だけ移動
-            if (mouse_scroll_flag) {
-                // スクロールボタンが押されている最中であればスクロール
-                bleKeyboard.mouse_move(0, 0, press_mouse_list[i].move_x, press_mouse_list[i].move_y);
-            } else {
-                // 通常時はマウス移動
-                bleKeyboard.mouse_move(press_mouse_list[i].move_x, press_mouse_list[i].move_y, 0, 0);
-            }
+            bleKeyboard.mouse_move(
+                press_mouse_list[i].move_x,
+                press_mouse_list[i].move_y,
+                press_mouse_list[i].move_wheel,
+                press_mouse_list[i].move_hWheel);
         } else {
             // スピードで割った分だけ移動
             mx = ((press_mouse_list[i].move_x * press_mouse_list[i].move_speed) / 100);
             my = ((press_mouse_list[i].move_y * press_mouse_list[i].move_speed) / 100);
-            if (mouse_scroll_flag) {
-                // スクロールボタンが押されている最中であればスクロール
-                bleKeyboard.mouse_move(0, 0, mx, my);
-            } else {
-                // 通常時はマウス移動
-                bleKeyboard.mouse_move(mx, my, 0, 0);
-            }
+            wx = ((press_mouse_list[i].move_wheel * press_mouse_list[i].move_speed) / 100);
+            wy = ((press_mouse_list[i].move_hWheel * press_mouse_list[i].move_speed) / 100);
+            bleKeyboard.mouse_move(mx, my, wx, wy);
             delay(5);
         }
         // index をカウント
@@ -334,6 +329,8 @@ void AzKeyboard::key_down_action(int key_num) {
         common_cls.press_mouse_list_push(key_num,
             mouse_move_input.x,
             mouse_move_input.y,
+            mouse_move_input.wheel,
+            mouse_move_input.hWheel,
             mouse_move_input.speed);
         // キー押したよリストに追加
         press_key_list_push(action_type, key_num, -1, select_layer_no, -1);

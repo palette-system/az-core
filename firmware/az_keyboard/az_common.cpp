@@ -993,6 +993,8 @@ void AzCommon::get_keymap(JsonObject setting_obj) {
                 // マウス移動
                 mouse_move_input.x = press_obj["move"]["x"].as<signed int>();
                 mouse_move_input.y = press_obj["move"]["y"].as<signed int>();
+                mouse_move_input.wheel = press_obj["move"]["wheel"].as<signed int>();
+                mouse_move_input.hWheel = press_obj["move"]["hWheel"].as<signed int>();
                 mouse_move_input.speed = press_obj["move"]["speed"].as<signed int>();
                 setting_press[i].data = (char *)new setting_mouse_move;
                 memcpy(setting_press[i].data, &mouse_move_input, sizeof(setting_mouse_move));
@@ -1550,7 +1552,13 @@ int AzCommon::i2c_read(int p, i2c_option *opt, char *read_data) {
             x = (pim447_data_obj.right - pim447_data_obj.left);
             y = (pim447_data_obj.down - pim447_data_obj.up);
         }
-        if (x != 0 || y != 0) press_mouse_list_push(0x2000, x, y, i2cpim447_obj.speed);
+        if (x != 0 || y != 0) {
+            if (mouse_scroll_flag) {
+                press_mouse_list_push(0x2000, 0, 0, x, y, i2cpim447_obj.speed);
+            } else {
+                press_mouse_list_push(0x2000, x, y, 0, 0, i2cpim447_obj.speed);
+            }
+        }
         // キー入力(クリック)取得
         read_raw[e] = pim447_data_obj.click;
         e++;
@@ -1669,7 +1677,7 @@ void AzCommon::press_mouse_list_clean() {
 
 
 // マウス移動リストに追加
-void AzCommon::press_mouse_list_push(int key_num, short move_x, short move_y, short move_speed) {
+void AzCommon::press_mouse_list_push(int key_num, short move_x, short move_y, short move_wheel, short move_hWheel, short move_speed) {
     int i;
     for (i=0; i<PRESS_MOUSE_MAX; i++) {
         // データが入っている or 指定されたキー番号以外は 次
@@ -1678,6 +1686,8 @@ void AzCommon::press_mouse_list_push(int key_num, short move_x, short move_y, sh
         press_mouse_list[i].key_num = key_num;
         press_mouse_list[i].move_x = move_x;
         press_mouse_list[i].move_y = move_y;
+        press_mouse_list[i].move_wheel = move_wheel;
+        press_mouse_list[i].move_hWheel = move_hWheel;
         press_mouse_list[i].move_speed = move_speed;
         press_mouse_list[i].move_index = 0;
         break;
