@@ -470,6 +470,7 @@ void BleKeyboardJIS::setConnInterval(int interval_type)
   hid_state_change_time = millis() + hid_saving_time;
   if (hid_power_saving_state == interval_type) return; // ステータスの変更が無ければ何もしない
   hid_power_saving_state = interval_type;
+  if (hid_interval_saving == hid_interval_normal) return; // 省電力モードのインターバルと通常モードのインターバルが一緒なら何もしない
   if (!this->isConnected()) return; // 接続していなければ何もしない
   if (interval_type == 1) {
     // 省電力中
