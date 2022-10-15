@@ -26,6 +26,13 @@ uint8_t key_matrix_length;
 // hid
 uint16_t hid_vid;
 uint16_t hid_pid;
+uint16_t hid_conn_handle = 0; // ペアリングしている機器のハンドルID
+int8_t hid_power_saving_mode = 0; // 省電力モード 0=通常 / 1=省電力モード
+int8_t hid_power_saving_state = 0; // インターバルステータス 0=通常 / 1=省電力
+uint32_t hid_state_change_time = 0; // 最後にステータスを変更した時間
+uint16_t hid_interval_normal = 28; // 通常時のBLEインターバル
+uint16_t hid_interval_saving = 80; // 省電力モード時のBLEインターバル
+int hid_saving_time = 0; // 省電力モードに入るまでの時間(ミリ秒)
 
 // ステータス表示用ピン番号
 int status_pin = -1;
@@ -835,6 +842,26 @@ void AzCommon::load_setting_json() {
     ap_pass_char = new char[m];
     ap_pass.toCharArray(ap_pass_char, m);
 
+    // 省電力モードの設定
+    hid_power_saving_mode = 0; // 省電力モード 0=通常 / 1=省電力モード
+    hid_interval_normal = 28; // 通常時のBLEインターバル
+    hid_interval_saving = 96; // 省電力モード時のBLEインターバル
+    hid_saving_time = 5000; // 省電力モードに入るまでの時間(ミリ秒)
+    if (setting_obj.containsKey("power_saving")) {
+        if (setting_obj["power_saving"].containsKey("mode")) {
+            hid_power_saving_mode = setting_obj["power_saving"]["mode"].as<signed int>();
+        }
+        if (setting_obj["power_saving"].containsKey("interval_normal")) {
+            hid_interval_normal = setting_obj["power_saving"]["interval_normal"].as<signed int>() * 100 / 125; // interval 1に対して1.25ミリ秒らしいので interval値を計算
+        }
+        if (setting_obj["power_saving"].containsKey("interval_saving")) {
+            hid_interval_saving = setting_obj["power_saving"]["interval_saving"].as<signed int>() * 100 / 125;
+        }
+        if (setting_obj["power_saving"].containsKey("saving_time")) {
+            hid_saving_time = setting_obj["power_saving"]["saving_time"].as<signed int>() * 1000;
+        }
+    }
+
     // ステータス表示用ピン番号取得
     if (setting_obj.containsKey("status_pin")) {
         status_pin = setting_obj["status_pin"].as<signed int>();
@@ -1120,6 +1147,7 @@ int AzCommon::i2c_setup(int p, i2c_option *opt) {
     int set_type[16];
     i2c_map i2cmap_obj;
     i2c_ioxp i2cioxp_obj;
+    i2c_pim447 i2cpim447_obj;
     // Serial.printf("i2c_setup: opt_type %D\n", opt->opt_type);
     if (opt->opt_type == 1) {
         // IOエキスパンダ
@@ -1162,7 +1190,8 @@ int AzCommon::i2c_setup(int p, i2c_option *opt) {
 
     } else if (opt->opt_type == 3) {
         // 1U トラックボール PIM447
-        // 初期化特になし
+        memcpy(&i2cpim447_obj, opt->data, sizeof(i2c_pim447));
+        wirelib_cls.set_az1uball_read_type(i2cpim447_obj.addr, 1);
 
     }
     // マッピングに合わせてキー番号を付けなおす

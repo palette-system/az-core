@@ -188,6 +188,7 @@ void BleKeyboardJIS::taskServer(void* pvParameter)
 };
 
 unsigned short BleKeyboardJIS::modifiers_press(unsigned short k) {
+  this->setConnInterval(0); // 消費電力モード解除
   if (k & JIS_SHIFT) { // shift
     this->_keyReport.modifiers |= 0x02; // the left shift modifier
     k &= 0xFF;
@@ -232,6 +233,7 @@ void BleKeyboardJIS::shift_release() {
 }
 
 unsigned short BleKeyboardJIS::modifiers_media_press(unsigned short k) {
+  this->setConnInterval(0); // 消費電力モード解除
   if (k == 8193) { // Eject
     this->_mediaKeyReport[0] |= 0x01;
     this->sendReport(&this->_mediaKeyReport);
@@ -348,6 +350,9 @@ void BleKeyboardJIS::mouse_release(uint8_t b)
 void BleKeyboardJIS::mouse_move(signed char x, signed char y, signed char wheel, signed char hWheel)
 {
     if (this->isConnected()) {
+        if (x != 0 || y != 0 || wheel != 0 || hWheel != 0 || this->_MouseButtons != 0) {
+            this->setConnInterval(0); // 消費電力モード解除
+        }
         uint8_t m[5];
         m[0] = this->_MouseButtons;
         m[1] = x;
@@ -363,6 +368,7 @@ size_t BleKeyboardJIS::press_raw(unsigned short k)
 {
   uint8_t i;
   unsigned short kk;
+  this->setConnInterval(0); // 消費電力モード解除
   // メディアキー
   if (modifiers_media_press(k)) return 1;
   ESP_LOGD(LOG_TAG, "press_raw: %D", k);
@@ -391,6 +397,7 @@ size_t BleKeyboardJIS::press_set(uint8_t k)
 {
   uint8_t i;
   unsigned short kk;
+  this->setConnInterval(0); // 消費電力モード解除
   kk = _asciimap[k];
   if (!kk) {
     ESP_LOGD(LOG_TAG, "press_set error: %D", k);
@@ -454,4 +461,22 @@ bool BleKeyboardJIS::onShift()
     if (press_key_list[i].key_id == 225 || press_key_list[i].key_id == 229) return true; // ShiftコードならばShiftが押されている
   }
   return false;
+}
+
+// コネクションインターバル設定
+void BleKeyboardJIS::setConnInterval(int interval_type)
+{
+  if (hid_power_saving_mode == 0) return; // 通常モードなら何もしない
+  hid_state_change_time = millis() + hid_saving_time;
+  if (hid_power_saving_state == interval_type) return; // ステータスの変更が無ければ何もしない
+  hid_power_saving_state = interval_type;
+  if (!this->isConnected()) return; // 接続していなければ何もしない
+  if (interval_type == 1) {
+    // 省電力中
+    this->pServer->updateConnParams(hid_conn_handle, hid_interval_saving - 2, hid_interval_saving + 2, 0, 200);
+  } else {
+    // 通常
+    this->pServer->updateConnParams(hid_conn_handle, hid_interval_normal - 2, hid_interval_normal + 2, 0, 200);
+  }
+    
 }

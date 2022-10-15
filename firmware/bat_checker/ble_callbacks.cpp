@@ -91,12 +91,13 @@ void DescriptorCallbacks::onRead(NimBLEDescriptor* pDescriptor) {
 BleConnectionStatus::BleConnectionStatus(void) {
 };
 
-void BleConnectionStatus::onConnect(NimBLEServer* pServer)
+void BleConnectionStatus::onConnect(NimBLEServer* pServer, ble_gap_conn_desc* desc)
 {
   this->connected = true;
+  pServer->updateConnParams(desc->conn_handle, 80, 80, 0, 60);
 };
 
-void BleConnectionStatus::onDisconnect(NimBLEServer* pServer)
+void BleConnectionStatus::onDisconnect(NimBLEServer* pServer, ble_gap_conn_desc* desc)
 {
   this->connected = false;
 };

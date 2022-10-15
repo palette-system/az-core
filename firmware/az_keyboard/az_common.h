@@ -60,7 +60,7 @@
 
 
 // ファームウェアのバージョン文字
-#define FIRMWARE_VERSION   "000108"
+#define FIRMWARE_VERSION   "000109"
 
 // EEPROMに保存しているデータのバージョン文字列
 #define EEP_DATA_VERSION    "AZM024"
@@ -284,6 +284,14 @@ class AzCommon
 // hid
 extern uint16_t hid_vid;
 extern uint16_t hid_pid;
+extern uint16_t hid_conn_handle; // ペアリングしている機器のハンドルID
+extern int8_t hid_power_saving_mode; // 省電力モード 0=通常 / 1=省電力モード
+extern int8_t hid_power_saving_state; // インターバルステータス 0=通常 / 1=省電力
+extern uint32_t hid_state_change_time; // 最後にステータスを変更した時間
+extern uint16_t hid_interval_normal; // 通常時のBLEインターバル
+extern uint16_t hid_interval_saving; // 省電力モード時のBLEインターバル
+extern int hid_saving_time; // 省電力モードに入るまでの時間(ミリ秒)
+
 
 // ステータスピン番号
 extern int status_pin;

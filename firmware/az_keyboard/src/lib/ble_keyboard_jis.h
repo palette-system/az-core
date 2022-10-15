@@ -401,6 +401,7 @@ class BleKeyboardJIS
     size_t release_raw(unsigned short k);
     void releaseAll(void);
     bool onShift(); // Shiftが押されている状態かどうか(物理的に)
+    void setConnInterval(int interval_type);
 };
 
 

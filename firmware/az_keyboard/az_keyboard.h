@@ -21,6 +21,7 @@ class AzKeyboard
         void press_data_reset(); // 入力状態を全てクリアする
         void press_key_list_push(int action_type, int key_num, int key_id, int layer_id, int repeat_interval); // キーを押しましたリストに追加
         void move_mouse_loop(); // マウス移動処理
+        void power_saving_loop(); // 省電力モード用ループ
         void press_data_clear(); // キーを押したままリストをクリア
     
     private:

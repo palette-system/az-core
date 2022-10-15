@@ -21,8 +21,8 @@ void setup() {
   led_index = 0;
   */
   // アナログピン初期化
-  adc1_config_width(ADC_WIDTH_12Bit);
-  adc1_config_channel_atten(ADC1_CHANNEL_0, ADC_ATTEN_11db);
+  // adc1_config_width(ADC_WIDTH_12Bit);
+  // adc1_config_channel_atten(ADC1_CHANNEL_0, ADC_ATTEN_11db);
   // キーボード初期化
   bleKeyboard.begin();
 }
@@ -39,9 +39,9 @@ void loop() {
   int i, v;
   char s[32];
   unsigned long sn = millis(); // 開始
-  v = adc1_get_voltage(ADC1_CHANNEL_0);
+  // v = adc1_get_voltage(ADC1_CHANNEL_0);
   if(bleKeyboard.isConnected()) {
-    sprintf(s, "%d %d", (sn / 1000), v);
+    sprintf(s, "%d", (sn / 60000));
     i = 0;
     while (s[i]) {
       if (s[i] == 0x20) key_press(0x2c); // space

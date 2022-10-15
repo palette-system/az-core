@@ -109,16 +109,23 @@ void DescriptorCallbacks::onRead(NimBLEDescriptor* pDescriptor) {
 BleConnectionStatus::BleConnectionStatus(void) {
 };
 
-void BleConnectionStatus::onConnect(NimBLEServer* pServer)
+void BleConnectionStatus::onConnect(NimBLEServer* pServer, ble_gap_conn_desc* desc)
 {
   keyboard_status = 1;
   this->connected = true;
+  hid_conn_handle = desc->conn_handle;
+  if (hid_power_saving_mode == 1) {
+	pServer->updateConnParams(desc->conn_handle, hid_interval_normal - 2, hid_interval_normal + 2, 0, 60);
+    hid_power_saving_state = 0; // 通常モード
+    hid_state_change_time = millis();
+  }
 };
 
-void BleConnectionStatus::onDisconnect(NimBLEServer* pServer)
+void BleConnectionStatus::onDisconnect(NimBLEServer* pServer, ble_gap_conn_desc* desc)
 {
   keyboard_status = 0;
   this->connected = false;
+  hid_conn_handle = 0;
 };
 
 /* ====================================================================================================================== */
@@ -183,6 +190,10 @@ void RemapOutputCallbacks::onWrite(NimBLECharacteristic* me) {
     uint8_t *command_id   = &(remap_buf[0]);
     uint8_t *command_data = &(remap_buf[1]);
 
+    // 省電力モードの場合解除
+    if (hid_power_saving_mode == 1 && hid_power_saving_state == 1) { // 省電力モードON で、現在の動作モードが省電力
+        hid_power_saving_state = 2;
+    }
 	/* REMAP から受け取ったデータデバッグ表示
 	Serial.printf("get: (%d) ", data_length);
 	for (i=0; i<data_length; i++) {

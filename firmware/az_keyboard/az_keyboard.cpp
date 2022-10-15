@@ -56,6 +56,8 @@ void AzKeyboard::start_keyboard() {
 
     press_key_all_clear = -1;
 
+     // setCpuFrequencyMhz(80);
+
   
 }
 
@@ -189,6 +191,23 @@ void AzKeyboard::move_mouse_loop() {
         if (press_mouse_list[i].move_index < 1000) press_mouse_list[i].move_index++;
         // トラックボールからの入力は1度送ったらすぐ削除
         if (press_mouse_list[i].key_num == 0x2000) common_cls.press_mouse_list_remove(0x2000);
+    }
+}
+
+// 消費電力用ループ
+void AzKeyboard::power_saving_loop() {
+    // 省電力状態に戻す
+  // Serial.printf("power_saving_loop: %d, %d, %d\n", hid_power_saving_mode, hid_power_saving_state, hid_state_change_time);
+    if (hid_power_saving_mode == 1  // 省電力モードON
+         // && aztool_mode_flag == 0 // AZTOOLモード中ではない
+         && hid_power_saving_state == 0 // 現在の動作モードが通常モード
+         && hid_state_change_time < millis()) { // 省電力モードに入るまでの時間が経過した
+        bleKeyboard.setConnInterval(1);
+    }
+
+    // 省電力状態を解除する(AZTOOLと通信が始まった時用)
+    if (hid_power_saving_state == 2) {
+        bleKeyboard.setConnInterval(0);
     }
 }
 
@@ -574,8 +593,6 @@ void AzKeyboard::press_data_clear() {
 
 // 定期実行の処理
 void AzKeyboard::loop_exec(void) {
-  unsigned long n;
-  n = millis();
   while (true) {
 
     // 現在のキーの状態を取得
@@ -604,6 +621,9 @@ void AzKeyboard::loop_exec(void) {
 
     // 現在のキーの状態を前回部分にコピー
     common_cls.key_old_copy();
+
+    // 省電力モード用ループ処理
+    power_saving_loop();
 
     // eztoolツールI2Cオプション設定中はループ処理をしない(I2Cの読み込みが走っちゃうと落ちるから)
     while (aztool_mode_flag == 1) {
