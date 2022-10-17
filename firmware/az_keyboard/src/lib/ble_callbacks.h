@@ -56,6 +56,9 @@ enum via_command_id {
     id_get_rotary_key                       = 0x3F,
     id_get_pim447                           = 0x40,
 
+    // ステータス取得
+    id_get_firmware_status                  = 0x60,
+
     // システム用
     id_unhandled                            = 0xFF,
 };

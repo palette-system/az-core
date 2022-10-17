@@ -782,6 +782,12 @@ void RemapOutputCallbacks::onWrite(NimBLECharacteristic* me) {
 			this->sendRawData(send_buf, 32);
 
 		}
+		case id_get_firmware_status: {
+			// ファームウェアステータス取得
+			sprintf((char *)send_buf, "%c%s-%s", id_get_firmware_status, FIRMWARE_VERSION, EEP_DATA_VERSION);
+			this->sendRawData(send_buf, 32);
+
+		}
 
 		default: {
 			remap_buf[0] = 0xFF;
