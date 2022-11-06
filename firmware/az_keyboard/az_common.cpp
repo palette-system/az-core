@@ -677,7 +677,7 @@ void AzCommon::load_setting_json() {
             i2copt[j].opt_type = opt_type & 0xff;
             // Serial.printf("i2c_option: load %D type %D - %D\n", i, opt_type, i2copt[j].opt_type);
             // マッピング情報の読み込み
-            if (opt_type == 1 || opt_type == 2 || opt_type == 3) { // 1 = IOエキスパンダ（MCP23017）/ 2 = Tiny202 ロータリーエンコーダ
+            if (opt_type == 1 || opt_type == 2 || opt_type == 3 || opt_type == 4) { // 1 = IOエキスパンダ（MCP23017）/ 2 = Tiny202 ロータリーエンコーダ
                 // キーマッピング設定
                 if (setting_obj["i2c_option"][i].containsKey("map") &&
                         setting_obj["i2c_option"][i]["map"].size() ) {
@@ -777,7 +777,7 @@ void AzCommon::load_setting_json() {
                 memcpy(i2copt[j].data, &i2crotary_obj, sizeof(i2c_rotary));
                 j++;
 
-            } else if (opt_type == 3) { // 3 = 1U トラックボール PIM447
+            } else if (opt_type == 3 || opt_type == 4) { // 3 = 1U トラックボール PIM447  // 4 = フリック入力
                 // アドレス
                 if (setting_obj["i2c_option"][i].containsKey("addr")) {
                     i2cpim447_obj.addr = setting_obj["i2c_option"][i]["addr"].as<signed int>();
@@ -800,7 +800,6 @@ void AzCommon::load_setting_json() {
                 memcpy(i2copt[j].data, &i2cpim447_obj, sizeof(i2c_pim447));
                 j++;
             
-
 
             }
 
@@ -1195,7 +1194,7 @@ int AzCommon::i2c_setup(int p, i2c_option *opt) {
 
     }
     // マッピングに合わせてキー番号を付けなおす
-    if (opt->opt_type == 1 || opt->opt_type == 2 || opt->opt_type == 3) {
+    if (opt->opt_type == 1 || opt->opt_type == 2 || opt->opt_type == 3 || opt->opt_type == 4) {
         // キーの番号をmapデータに入れる
         // あとでキー設定の番号入れ替えをここでやる
         memcpy(&i2cmap_obj, opt->i2cmap, sizeof(i2c_map));
@@ -1562,7 +1561,7 @@ int AzCommon::i2c_read(int p, i2c_option *opt, char *read_data) {
             e++;
         }
 
-    } else if (opt->opt_type == 3) {
+    } else if (opt->opt_type == 3 || opt->opt_type == 4) {
         // 1U トラックボール PIM447
         memcpy(&i2cpim447_obj, opt->data, sizeof(i2c_pim447));
         memcpy(&i2cmap_obj, opt->i2cmap, sizeof(i2c_map));
@@ -1586,12 +1585,28 @@ int AzCommon::i2c_read(int p, i2c_option *opt, char *read_data) {
             if (x < -127) x = -127;
             if (y > 127) y = 127;
             if (y < -127) y = -127;
-            if (mouse_scroll_flag) {
-                m = (y == 0)? 0: (y > 0)? 1: -1;
-                n = (x == 0)? 0: (x > 0)? 1: -1;
-                press_mouse_list_push(0x2000, 0, 0, m, n, 100);
-            } else {
-                press_mouse_list_push(0x2000, x, y, 0, 0, i2cpim447_obj.speed);
+            if (opt->opt_type == 3) {
+                // トラックボール
+                if (mouse_scroll_flag) {
+                    m = (y == 0)? 0: (y > 0)? 1: -1;
+                    n = (x == 0)? 0: (x > 0)? 1: -1;
+                    press_mouse_list_push(0x2000, 0, 0, m, n, 100);
+                } else {
+                    press_mouse_list_push(0x2000, x, y, 0, 0, i2cpim447_obj.speed);
+                }
+            } else if (opt->opt_type == 4) {
+                // フリック入力
+                read_raw[e] = 0;
+                if (x < -2 && abs(x) > abs(y)) {
+                    read_raw[e] = 1; // 左
+                } else if (x > 2 && abs(x) > abs(y)) {
+                    read_raw[e] = 2; // 右
+                } else if (y < -2 && abs(y) > abs(x)) {
+                    read_raw[e] = 4; // 上
+                } else if (y > 2 && abs(y) > abs(x)) {
+                    read_raw[e] = 8; // 下
+                }
+                e++;
             }
         }
         // キー入力(クリック)取得
@@ -1600,7 +1615,7 @@ int AzCommon::i2c_read(int p, i2c_option *opt, char *read_data) {
 
     }
     // 読み込んだデータからキー入力を取得
-    if (opt->opt_type == 1 || opt->opt_type == 2 || opt->opt_type == 3) {
+    if (opt->opt_type == 1 || opt->opt_type == 2 || opt->opt_type == 3 || opt->opt_type == 4) {
         // マップデータ分入力を取得
         for (j=0; j<i2cmap_obj.map_len; j++) {
             n = i2cmap_obj.map[j];
