@@ -189,6 +189,7 @@ void RemapOutputCallbacks::onWrite(NimBLECharacteristic* me) {
 	int h, i, j, k, l, m, s, o, p, x;
     uint8_t *command_id   = &(remap_buf[0]);
     uint8_t *command_data = &(remap_buf[1]);
+	tracktall_pim447_data pim447_data_obj;
 
     // 省電力モードの場合解除
     if (hid_power_saving_mode == 1 && hid_power_saving_state == 1) { // 省電力モードON で、現在の動作モードが省電力
@@ -764,34 +765,35 @@ void RemapOutputCallbacks::onWrite(NimBLECharacteristic* me) {
             send_buf[2] = wirelib_cls.read_rotary(m); // データ受け取る
 			for (i=3; i<32; i++) send_buf[i] = 0x00;
 			this->sendRawData(send_buf, 32);
+			return;
 
 		}
 		case id_get_pim447: {
 			// 1U トラックボールデータ取得 PIM447
-			tracktall_pim447_data r;
 		    m = remap_buf[1]; // 読み込みに行くアドレス取得
 			send_buf[0] = id_get_pim447; // キーの入力状態
 			send_buf[1] = m; // 読み込みに行くアドレス
-            r = wirelib_cls.read_trackball_pim447(m); // データ受け取る
-			send_buf[2] = r.left;
-			send_buf[3] = r.right;
-			send_buf[4] = r.up;
-			send_buf[5] = r.down;
-			send_buf[6] = r.click;
+            pim447_data_obj = wirelib_cls.read_trackball_pim447(m); // データ受け取る
+			send_buf[2] = pim447_data_obj.left;
+			send_buf[3] = pim447_data_obj.right;
+			send_buf[4] = pim447_data_obj.up;
+			send_buf[5] = pim447_data_obj.down;
+			send_buf[6] = pim447_data_obj.click;
 			for (i=7; i<32; i++) send_buf[i] = 0x00;
 			this->sendRawData(send_buf, 32);
+			return;
 
 		}
 		case id_get_firmware_status: {
 			// ファームウェアステータス取得
 			sprintf((char *)send_buf, "%c%s-%s", id_get_firmware_status, FIRMWARE_VERSION, EEP_DATA_VERSION);
 			this->sendRawData(send_buf, 32);
+			return;
 
 		}
 
 		default: {
 			remap_buf[0] = 0xFF;
-			break;
 		}
 	}
 

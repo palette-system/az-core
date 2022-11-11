@@ -24,11 +24,11 @@ void Wirelib::set_az1uball_read_type(int addr, int set_mode) {
 
 // 1Uトラックボール PIM447 から入力を取得する
 tracktall_pim447_data Wirelib::read_trackball_pim447(int addr) {
-    int wire_err;
+    // int wire_err;
     tracktall_pim447_data r;
-    Wire.beginTransmission(addr);
-    Wire.write(0x04);
-    wire_err = Wire.endTransmission();
+    // Wire.beginTransmission(addr);
+    // Wire.write(0x04);
+    // wire_err = Wire.endTransmission();
     Wire.requestFrom(addr, 5);
     r.left = Wire.read();  // 左回転
     r.right = Wire.read(); // 右回転
