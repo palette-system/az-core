@@ -249,8 +249,10 @@ class AzCommon
         void pin_setup(); // キーの入力ピンの初期化
         void pinmode_analog(int gpio_no); // アナログ入力ピン初期化
         int analog_read(int gpio_no); // アナログピンの入力を取得
+#if CONFIG_IDF_TARGET_ESP32
         adc1_channel_t get_channel_1(int gpio_no); // GPIOの番号からADCのチャネルを取得する adc 1
         adc2_channel_t get_channel_2(int gpio_no); // GPIOの番号からADCのチャネルを取得する adc 2
+#endif
         int get_adc_num(int gpio_no); // GPIOの番号からADC1かADC2かを返す
         int get_power_vol(); // 電源電圧を取得
         bool layers_exists(int layer_no); // レイヤーが存在するか確認

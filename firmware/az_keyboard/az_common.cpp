@@ -1294,7 +1294,10 @@ void AzCommon::pin_setup() {
     this->key_count_total = 0;
 }
 
-// アナログ入力ピン初期化
+
+#if CONFIG_IDF_TARGET_ESP32
+
+// アナログ入力ピン初期化(ESP32)
 void AzCommon::pinmode_analog(int gpio_no) {
     int i;
     i = this->get_adc_num(gpio_no); // adc1か adc2か
@@ -1307,7 +1310,7 @@ void AzCommon::pinmode_analog(int gpio_no) {
     }
 }
 
-// アナログピンの入力を取得
+// アナログピンの入力を取得(ESP32)
 int AzCommon::analog_read(int gpio_no) {
     int i, r = -1;
     i = this->get_adc_num(gpio_no); // adc1か adc2か
@@ -1348,6 +1351,19 @@ adc2_channel_t AzCommon::get_channel_2(int gpio_no) {
     if (gpio_no == 26) return ADC2_CHANNEL_9;
     return ADC2_CHANNEL_0; // ADCが無いピンを指定されたらとりあえずgpio4を返しとく
 }
+
+#else
+
+// アナログ入力ピン初期化(ESP32)
+void AzCommon::pinmode_analog(int gpio_no) {
+}
+
+// アナログピンの入力を取得(ESP32)
+int AzCommon::analog_read(int gpio_no) {
+    return -1;
+}
+
+#endif
 
 // GPIOの番号からADC1かADC2かを返す
 int AzCommon::get_adc_num(int gpio_no) {
