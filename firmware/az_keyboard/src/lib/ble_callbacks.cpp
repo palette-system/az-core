@@ -181,20 +181,16 @@ RemapOutputCallbacks::RemapOutputCallbacks(void) {
 }
 
 
-
 void RemapOutputCallbacks::onWrite(NimBLECharacteristic* me) {
 	uint8_t* data = (uint8_t*)(me->getValue().c_str());
 	size_t data_length = me->getDataLength();
 	memcpy(remap_buf, data, data_length);
-	int h, i, j, k, l, m, s, o, p, x;
-    uint8_t *command_id   = &(remap_buf[0]);
-    uint8_t *command_data = &(remap_buf[1]);
-	tracktall_pim447_data pim447_data_obj;
 
     // 省電力モードの場合解除
     if (hid_power_saving_mode == 1 && hid_power_saving_state == 1) { // 省電力モードON で、現在の動作モードが省電力
         hid_power_saving_state = 2;
     }
+
 	/* REMAP から受け取ったデータデバッグ表示
 	Serial.printf("get: (%d) ", data_length);
 	for (i=0; i<data_length; i++) {
@@ -202,6 +198,37 @@ void RemapOutputCallbacks::onWrite(NimBLECharacteristic* me) {
 	}
 	Serial.printf("\n");
 	*/
+
+    HidrawCallbackExec(data_length);
+
+	/* REMAPに送信するデータデバッグ表示
+	Serial.printf("put: (%d) ", data_length);
+	for (i=0; i<data_length; i++) Serial.printf("%02x ", remap_buf[i]);
+	Serial.printf("\n\n");
+	*/
+	delay(5);
+	this->sendRawData(remap_buf, data_length);
+	delay(10);
+	
+}
+
+// Remapにデータを返す
+void RemapOutputCallbacks::sendRawData(uint8_t *data, uint8_t data_length) {
+	this->pInputCharacteristic->setValue(data, data_length);
+    this->pInputCharacteristic->notify();
+	// delay(1);
+}
+
+
+/* ====================================================================================================================== */
+/** HID RAW コールバック用 クラス */
+/* ====================================================================================================================== */
+
+void HidrawCallbackExec(int data_length) {
+	int h, i, j, k, l, m, s, o, p, x;
+    uint8_t *command_id   = &(remap_buf[0]);
+    uint8_t *command_data = &(remap_buf[1]);
+	tracktall_pim447_data pim447_data_obj;
 
 	// 設定変更がされていて設定変更以外のコマンドが飛んできたら設定を保存
 	if (remap_change_flag && *command_id != 0x05) {
@@ -297,7 +324,7 @@ void RemapOutputCallbacks::onWrite(NimBLECharacteristic* me) {
 			if (!SPIFFS.exists(target_file_path)) {
 				send_buf[0] = id_get_file_start;
 				for (i=1; i<32; i++) send_buf[i] = 0x00;
-				this->sendRawData(send_buf, 32);
+				// this->sendRawData(send_buf, 32);
 				return;
 			}
 			open_file = SPIFFS.open(target_file_path, "r");
@@ -317,7 +344,7 @@ void RemapOutputCallbacks::onWrite(NimBLECharacteristic* me) {
 			send_buf[4] = ((save_file_length >> 8) & 0xff);
 			send_buf[5] = (save_file_length & 0xff);
 			for (i=6; i<32; i++) send_buf[i] = 0x00;
-			this->sendRawData(send_buf, 32);
+			// this->sendRawData(send_buf, 32);
 			return;
 		    
 		}
@@ -357,7 +384,7 @@ void RemapOutputCallbacks::onWrite(NimBLECharacteristic* me) {
 					send_buf[i] = 0x00;
 					i++;
 				}
-				this->sendRawData(send_buf, 32);
+				// this->sendRawData(send_buf, 32);
 				// if (!open_file.available()) break;
 				if (p >= save_file_length) break;
 
@@ -395,7 +422,7 @@ void RemapOutputCallbacks::onWrite(NimBLECharacteristic* me) {
 			send_buf[0] = id_save_file_data;
 			send_buf[1] = save_file_step;
 			for (i=2; i<32; i++) send_buf[i] = 0x00;
-			this->sendRawData(send_buf, 32);
+			// this->sendRawData(send_buf, 32);
 			return;
 
 		}
@@ -440,7 +467,7 @@ void RemapOutputCallbacks::onWrite(NimBLECharacteristic* me) {
 					send_buf[8] = (h >> 8) & 0xff;  // データ確認用ハッシュ 3
 					send_buf[9] = h & 0xff;         // データ確認用ハッシュ 4
 					for (i=10; i<32; i++) send_buf[i] = 0x00;
-					this->sendRawData(send_buf, 32);
+					// this->sendRawData(send_buf, 32);
 					return;
 				} else {
 					// データを全部受け取り終わり
@@ -453,7 +480,7 @@ void RemapOutputCallbacks::onWrite(NimBLECharacteristic* me) {
 					send_buf[4] = (h >> 8) & 0xff;  // データ確認用ハッシュ 3
 					send_buf[5] = h & 0xff;         // データ確認用ハッシュ 4
 					for (i=6; i<32; i++) send_buf[i] = 0x00;
-					this->sendRawData(send_buf, 32);
+					// this->sendRawData(send_buf, 32);
 					return;
 				}
 
@@ -471,7 +498,7 @@ void RemapOutputCallbacks::onWrite(NimBLECharacteristic* me) {
 			send_buf[0] = id_save_file_complate; // 保存完了
 			send_buf[1] = 0x01; // データ保存完了
 			for (i=2; i<32; i++) send_buf[i] = 0x00;
-			this->sendRawData(send_buf, 32);
+			// this->sendRawData(send_buf, 32);
 			return;
 		}
 		case id_remove_file: { // 0x35 ファイル削除要求
@@ -499,7 +526,7 @@ void RemapOutputCallbacks::onWrite(NimBLECharacteristic* me) {
 			}
 			// 完了を返す
 			for (i=2; i<32; i++) send_buf[i] = 0x00;
-			this->sendRawData(send_buf, 32);
+			// this->sendRawData(send_buf, 32);
 			return;
 
 		}
@@ -510,7 +537,7 @@ void RemapOutputCallbacks::onWrite(NimBLECharacteristic* me) {
 			// 結果を返すコマンドを送信
 			send_buf[0] = id_remove_all;
 			for (i=1; i<32; i++) send_buf[i] = 0x00;
-			this->sendRawData(send_buf, 32);
+			// this->sendRawData(send_buf, 32);
 			return;
 
 		}
@@ -547,7 +574,7 @@ void RemapOutputCallbacks::onWrite(NimBLECharacteristic* me) {
 				send_buf[1] = 0x02;
 			}
 			for (i=2; i<32; i++) send_buf[i] = 0x00;
-			this->sendRawData(send_buf, 32);
+			// this->sendRawData(send_buf, 32);
 			return;
 		}
 		case id_get_file_list: {
@@ -575,7 +602,7 @@ void RemapOutputCallbacks::onWrite(NimBLECharacteristic* me) {
 			send_buf[3] = ((save_file_length >> 8) & 0xff);
 			send_buf[4] = (save_file_length & 0xff);
 			for (i=5; i<32; i++) send_buf[i] = 0x00;
-			this->sendRawData(send_buf, 32);
+			// this->sendRawData(send_buf, 32);
 			return;
 		}
 		case id_get_disk_info: {
@@ -597,7 +624,7 @@ void RemapOutputCallbacks::onWrite(NimBLECharacteristic* me) {
 			keyboard_status = 1; // ステータスを元に戻す
 			// 結果を返すコマンドを送信
 			for (i=9; i<32; i++) send_buf[i] = 0x00;
-			this->sendRawData(send_buf, 32);
+			// this->sendRawData(send_buf, 32);
 			return;
 		}
 		case id_restart: {
@@ -618,7 +645,7 @@ void RemapOutputCallbacks::onWrite(NimBLECharacteristic* me) {
 				send_buf[0] = id_get_ioxp_key; // IOエキスパンダキー読み込み
 				send_buf[1] = 0x01; // 使用中
 				for (i=2; i<32; i++) send_buf[i] = 0x00;
-				this->sendRawData(send_buf, 32);
+				// this->sendRawData(send_buf, 32);
 				return;
 			}
 			// 初期化がまだであれば初期化
@@ -632,7 +659,7 @@ void RemapOutputCallbacks::onWrite(NimBLECharacteristic* me) {
 					send_buf[0] = id_get_ioxp_key; // IOエキスパンダキー読み込み
 					send_buf[1] = 0x02; // 初期化失敗
 					for (i=2; i<32; i++) send_buf[i] = 0x00;
-					this->sendRawData(send_buf, 32);
+					// this->sendRawData(send_buf, 32);
 					return;
 				}
                 ioxp_status[x] = 1;
@@ -699,7 +726,7 @@ void RemapOutputCallbacks::onWrite(NimBLECharacteristic* me) {
 			}
 			// 結果を送信
 			for (i=p; i<32; i++) send_buf[i] = 0x00; // 残りのデータを0詰め
-			this->sendRawData(send_buf, 32);
+			// this->sendRawData(send_buf, 32);
 			return;
 		}
 		case id_set_mode_flag: {
@@ -708,7 +735,7 @@ void RemapOutputCallbacks::onWrite(NimBLECharacteristic* me) {
 			// 結果を送信
 			send_buf[0] = id_set_mode_flag; // フラグの設定
 			for (i=1; i<32; i++) send_buf[i] = 0x00; // 残りのデータを0詰め
-			this->sendRawData(send_buf, 32);
+			// this->sendRawData(send_buf, 32);
 			return;
 			
 		}
@@ -726,7 +753,7 @@ void RemapOutputCallbacks::onWrite(NimBLECharacteristic* me) {
 			send_buf[3] = ((save_file_length >> 8) & 0xff);
 			send_buf[4] = (save_file_length & 0xff);
 			for (i=5; i<32; i++) send_buf[i] = 0x00;
-			this->sendRawData(send_buf, 32);
+			// this->sendRawData(send_buf, 32);
 			keyboard_status = 1;
 			return;
 
@@ -753,7 +780,7 @@ void RemapOutputCallbacks::onWrite(NimBLECharacteristic* me) {
 			}
 			if (j > 0 && j < 8) send_buf[s] = send_buf[s] << (8 - j);
 			// 結果を送信
-			this->sendRawData(send_buf, 32);
+			// this->sendRawData(send_buf, 32);
 			return;
 
 		}
@@ -764,7 +791,7 @@ void RemapOutputCallbacks::onWrite(NimBLECharacteristic* me) {
 			send_buf[1] = m; // 読み込みに行くアドレス
             send_buf[2] = wirelib_cls.read_rotary(m); // データ受け取る
 			for (i=3; i<32; i++) send_buf[i] = 0x00;
-			this->sendRawData(send_buf, 32);
+			// this->sendRawData(send_buf, 32);
 			return;
 
 		}
@@ -780,14 +807,14 @@ void RemapOutputCallbacks::onWrite(NimBLECharacteristic* me) {
 			send_buf[5] = pim447_data_obj.down;
 			send_buf[6] = pim447_data_obj.click;
 			for (i=7; i<32; i++) send_buf[i] = 0x00;
-			this->sendRawData(send_buf, 32);
+			// this->sendRawData(send_buf, 32);
 			return;
 
 		}
 		case id_get_firmware_status: {
 			// ファームウェアステータス取得
 			sprintf((char *)send_buf, "%c%s-%s", id_get_firmware_status, FIRMWARE_VERSION, EEP_DATA_VERSION);
-			this->sendRawData(send_buf, 32);
+			// this->sendRawData(send_buf, 32);
 			return;
 
 		}
@@ -796,21 +823,4 @@ void RemapOutputCallbacks::onWrite(NimBLECharacteristic* me) {
 			remap_buf[0] = 0xFF;
 		}
 	}
-
-	/* REMAPに送信するデータデバッグ表示
-	Serial.printf("put: (%d) ", data_length);
-	for (i=0; i<data_length; i++) Serial.printf("%02x ", remap_buf[i]);
-	Serial.printf("\n\n");
-	*/
-	delay(10);
-	this->sendRawData(remap_buf, data_length);
-	delay(10);
-	
-}
-
-// Remapにデータを返す
-void RemapOutputCallbacks::sendRawData(uint8_t *data, uint8_t data_length) {
-	this->pInputCharacteristic->setValue(data, data_length);
-    this->pInputCharacteristic->notify();
-	// delay(1);
 }

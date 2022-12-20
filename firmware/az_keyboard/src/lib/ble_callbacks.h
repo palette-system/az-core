@@ -69,7 +69,13 @@ enum via_keyboard_value_id {
     id_switch_matrix_state = 0x03
 };
 
+// remapへ返事を返す用のバッファ
 extern uint8_t remap_buf[36];
+
+// ファイル送受信用バッファ
+extern uint8_t send_buf[36];
+extern char target_file_path[36];
+extern char second_file_path[36];
 
 // Characteristic コールバック クラス
 class CharacteristicCallbacks: public NimBLECharacteristicCallbacks {
@@ -125,6 +131,8 @@ class RemapOutputCallbacks : public NimBLECharacteristicCallbacks {
 	void sendRawData(uint8_t *data, uint8_t data_length); // Remapにデータを返す
 };
 
+// HidrawCallback
+void HidrawCallbackExec(int data_length);
 
 #endif // CONFIG_BT_NIMBLE_ROLE_PERIPHERAL
 #endif // CONFIG_BT_ENABLED
