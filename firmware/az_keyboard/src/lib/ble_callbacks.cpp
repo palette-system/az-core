@@ -182,6 +182,7 @@ RemapOutputCallbacks::RemapOutputCallbacks(void) {
 
 
 void RemapOutputCallbacks::onWrite(NimBLECharacteristic* me) {
+	int i;
 	uint8_t* data = (uint8_t*)(me->getValue().c_str());
 	size_t data_length = me->getDataLength();
 	memcpy(remap_buf, data, data_length);
@@ -191,24 +192,70 @@ void RemapOutputCallbacks::onWrite(NimBLECharacteristic* me) {
         hid_power_saving_state = 2;
     }
 
-	/* REMAP から受け取ったデータデバッグ表示
+    /* REMAP から受け取ったデータデバッグ表示
 	Serial.printf("get: (%d) ", data_length);
 	for (i=0; i<data_length; i++) {
 		Serial.printf("%02x ", remap_buf[i]);
 	}
 	Serial.printf("\n");
 	*/
+    if (remap_buf[0] == id_get_file_data) {
+		// 0x31 ファイルデータ要求
+		int s, p, h, l, m, j;
+		// 情報を取得
+		s = remap_buf[1]; // ステップ数
+		p = (remap_buf[2] << 16) + (remap_buf[3] << 8) + remap_buf[4]; // 読み込み開始位置
+		h = (remap_buf[5] << 24) + (remap_buf[6] << 16) + (remap_buf[7] << 8) + remap_buf[8]; // ハッシュ値
+		if (h != 0) {
+			l = s * (data_length - 4); // ステップ数 x 1コマンドで送るデータ数
+			m = azcrc32(&save_file_data[p - l], l); // 前回送った所のハッシュを計算
+			if (h != m) { // ハッシュ値が違えば前に送った所をもう一回送る
+				// Serial.printf("NG : [%d %d] [ %d -> %d ]\n", h, m, p, (p - l));
+				p = p - l;
+			}
+		}
+		j = 0;
+		for (j=0; j<s; j++) {
+			send_buf[0] = id_get_file_data;
+			send_buf[1] = ((p >> 16) & 0xff);
+			send_buf[2] = ((p >> 8) & 0xff);
+			send_buf[3] = (p & 0xff);
+			i = 4;
+			while (p < save_file_length) {
+				send_buf[i] = save_file_data[p];
+				i++;
+				p++;
+				if (i >= 32) break;
+			}
+			while (i<32) {
+				send_buf[i] = 0x00;
+				i++;
+			}
+			this->sendRawData(send_buf, 32);
+			if (p >= save_file_length) break;
 
-    HidrawCallbackExec(data_length);
+		}
+		if (p >= save_file_length) {
+			// Serial.printf("free load: %d %d\n", save_file_length, heap_caps_get_free_size(MALLOC_CAP_INTERNAL));
+			free(save_file_data);
+		}
 
-	/* REMAPに送信するデータデバッグ表示
+	} else {
+		// それ以外は共通処理
+		HidrawCallbackExec(data_length);
+		// 返信データ送信
+		if (send_buf[0]) {
+			this->sendRawData(send_buf, data_length);
+		}
+	}
+
+
+    /*
 	Serial.printf("put: (%d) ", data_length);
-	for (i=0; i<data_length; i++) Serial.printf("%02x ", remap_buf[i]);
+	for (i=0; i<data_length; i++) Serial.printf("%02x ", send_buf[i]);
 	Serial.printf("\n\n");
 	*/
-	delay(5);
-	this->sendRawData(remap_buf, data_length);
-	delay(10);
+
 	
 }
 
@@ -349,53 +396,8 @@ void HidrawCallbackExec(int data_length) {
 		    
 		}
 		case id_get_file_data: { // 0x31 ファイルデータ要求
-		    // 情報を取得
-			s = remap_buf[1]; // ステップ数
-			p = (remap_buf[2] << 16) + (remap_buf[3] << 8) + remap_buf[4]; // 読み込み開始位置
-			h = (remap_buf[5] << 24) + (remap_buf[6] << 16) + (remap_buf[7] << 8) + remap_buf[8]; // ハッシュ値
-			if (h != 0) {
-				l = s * (data_length - 4); // ステップ数 x 1コマンドで送るデータ数
-				m = azcrc32(&save_file_data[p - l], l); // 前回送った所のハッシュを計算
-				if (h != m) { // ハッシュ値が違えば前に送った所をもう一回送る
-					// Serial.printf("NG : [%d %d] [ %d -> %d ]\n", h, m, p, (p - l));
-				    p = p - l;
-				} else {
-					// Serial.printf("OK : [%d %d] [ %d ]\n", h, m, p);
-				}
-			}
-			j = 0;
-			// open_file = SPIFFS.open(target_file_path, "r");
-			// open_file.seek(p, SeekSet);
-			for (j=0; j<s; j++) {
-				send_buf[0] = id_get_file_data;
-				send_buf[1] = ((p >> 16) & 0xff);
-				send_buf[2] = ((p >> 8) & 0xff);
-				send_buf[3] = (p & 0xff);
-				i = 4;
-				// while (open_file.available()) {
-				while (p < save_file_length) {
-					// send_buf[i] = open_file.read();
-					send_buf[i] = save_file_data[p];
-					i++;
-					p++;
-					if (i >= 32) break;
-				}
-				while (i<32) {
-					send_buf[i] = 0x00;
-					i++;
-				}
-				// this->sendRawData(send_buf, 32);
-				// if (!open_file.available()) break;
-				if (p >= save_file_length) break;
-
-			}
-			if (p >= save_file_length) {
-				// Serial.printf("free load: %d %d\n", save_file_length, heap_caps_get_free_size(MALLOC_CAP_INTERNAL));
-				free(save_file_data);
-			}
-
-			// open_file.close();
 			return;
+
 		}
 		case id_save_file_start: { // 0x32 ファイル保存開始
 		    // 容量を取得
@@ -486,6 +488,7 @@ void HidrawCallbackExec(int data_length) {
 
 
 			}
+			send_buf[0] = 0;
 			return;
 		}
 		case id_save_file_complate: {
@@ -631,6 +634,7 @@ void HidrawCallbackExec(int data_length) {
 			// M5StackCore2 の再起動
 		    m = remap_buf[1]; // 起動モード取得
 			common_cls.change_mode(m);
+			send_buf[0] = 0;
 			return;
 
 		}

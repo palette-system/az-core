@@ -63,7 +63,7 @@
 #define FIRMWARE_VERSION   "000112"
 
 // EEPROMに保存しているデータのバージョン文字列
-#define EEP_DATA_VERSION    "AZM024"
+#define EEP_DATA_VERSION    "AZC001"
 
 // JSON のファイルパス
 #define SETTING_JSON_PATH "/setting.json"
