@@ -1,0 +1,46 @@
+{
+	"ap": {
+		"pass": ""
+	},
+	"wifi": [],
+	"vendorId": "0xe502",
+	"productId": "0x0201",
+	"led_num": [],
+	"key_matrix": [],
+	"keyboard_language": 0,
+	"keyboard_name": "atoms3",
+	"keyboard_type": "atoms3",
+	"keyboard_pin": {
+		"row": [],
+		"col": [],
+		"direct": [41, 6, 8],
+		"touch": []
+	},
+	"i2c_set": [5, 7, 400000],
+	"default_layer": 0,
+	"layers": {
+		"layer_0": {
+			"name": "レイヤー0",
+			"keys": {
+				"key_0": {
+					"press": {
+						"action_type": 1,
+						"key": [4]
+					}
+				},
+				"key_1": {
+					"press": {
+						"action_type": 1,
+						"key": [5]
+					}
+				},
+				"key_2": {
+					"press": {
+						"action_type": 1,
+						"key": [6]
+					}
+				}
+			}
+		}
+	}
+}

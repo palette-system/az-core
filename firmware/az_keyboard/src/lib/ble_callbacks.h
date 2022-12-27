@@ -12,70 +12,10 @@
 #include "HIDTypes.h"
 #include "NimBLECharacteristic.h"
 
+#include "hid_common.h"
 #include "../../az_common.h"
 
 
-enum via_command_id {
-    // remap用
-    id_get_protocol_version                 = 0x01,  // always 0x01
-    id_get_keyboard_value                   = 0x02,
-    id_set_keyboard_value                   = 0x03,
-    id_dynamic_keymap_get_keycode           = 0x04,
-    id_dynamic_keymap_set_keycode           = 0x05,
-    id_dynamic_keymap_reset                 = 0x06,
-    id_lighting_set_value                   = 0x07,
-    id_lighting_get_value                   = 0x08,
-    id_lighting_save                        = 0x09,
-    id_eeprom_reset                         = 0x0A,
-    id_bootloader_jump                      = 0x0B,
-    id_dynamic_keymap_macro_get_count       = 0x0C,
-    id_dynamic_keymap_macro_get_buffer_size = 0x0D,
-    id_dynamic_keymap_macro_get_buffer      = 0x0E,
-    id_dynamic_keymap_macro_set_buffer      = 0x0F,
-    id_dynamic_keymap_macro_reset           = 0x10,
-    id_dynamic_keymap_get_layer_count       = 0x11,
-    id_dynamic_keymap_get_buffer            = 0x12,
-    id_dynamic_keymap_set_buffer            = 0x13,
-
-    // aztool用
-    id_get_file_start                       = 0x30,
-    id_get_file_data                        = 0x31,
-    id_save_file_start                      = 0x32,
-    id_save_file_data                       = 0x33,
-    id_save_file_complate                   = 0x34,
-    id_remove_file                          = 0x35,
-    id_remove_all                           = 0x36,
-    id_move_file                            = 0x37,
-    id_get_file_list                        = 0x38,
-    id_get_disk_info                        = 0x39,
-    id_restart                              = 0x3A,
-    id_get_ioxp_key                         = 0x3B,
-    id_set_mode_flag                        = 0x3C,
-    id_get_ap_list                          = 0x3D,
-    id_read_key                             = 0x3E,
-    id_get_rotary_key                       = 0x3F,
-    id_get_pim447                           = 0x40,
-
-    // ステータス取得
-    id_get_firmware_status                  = 0x60,
-
-    // システム用
-    id_unhandled                            = 0xFF,
-};
-
-enum via_keyboard_value_id {
-    id_uptime              = 0x01,  //
-    id_layout_options      = 0x02,
-    id_switch_matrix_state = 0x03
-};
-
-// remapへ返事を返す用のバッファ
-extern uint8_t remap_buf[36];
-
-// ファイル送受信用バッファ
-extern uint8_t send_buf[36];
-extern char target_file_path[36];
-extern char second_file_path[36];
 
 // Characteristic コールバック クラス
 class CharacteristicCallbacks: public NimBLECharacteristicCallbacks {

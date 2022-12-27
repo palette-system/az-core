@@ -1658,11 +1658,18 @@ void AzCommon::key_read(void) {
     }
     // タッチ入力の取得
     for (i=0; i<touch_len; i++) {
+#if CONFIG_IDF_TARGET_ESP32
+        // タッチ機能はESP32にしかない
         if (touchRead(touch_list[i]) < 25) {
             input_key[n] = 1;
         } else {
             input_key[n] = 0;
         }
+#else
+        // タッチ機能がないESPでは常に0
+        input_key[n] = 0;
+
+#endif
         n++;
     }
     // マトリックス入力の取得

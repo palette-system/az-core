@@ -1,3 +1,5 @@
+#if CONFIG_IDF_TARGET_ESP32
+
 #include <NimBLEDevice.h>
 #include <NimBLEUtils.h>
 #include <NimBLEServer.h>
@@ -481,3 +483,5 @@ void BleKeyboardJIS::setConnInterval(int interval_type)
   }
     
 }
+
+#endif // CONFIG_IDF_TARGET_ESP32

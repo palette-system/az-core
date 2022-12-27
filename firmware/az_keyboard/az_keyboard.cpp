@@ -1,12 +1,21 @@
 #include "Arduino.h"
 #include "az_keyboard.h"
 #include "az_common.h"
-#include "src/lib/ble_keyboard_jis.h"
 #include "src/lib/ankey.h"
 #include "src/lib/dakey.h"
 
+#if CONFIG_IDF_TARGET_ESP32S3
+// ESP32 S3 の場合は 有線キーボード
+#include "src/lib/usb_keyboard.h"
+// 有線キーボードクラス
+CustomHIDDevice bleKeyboard = CustomHIDDevice();
+#else
+// ESP32 、 ESP32 C3 の場合は BLEキーボード
+#include "src/lib/ble_keyboard_jis.h"
 // BLEキーボードクラス
 BleKeyboardJIS bleKeyboard = BleKeyboardJIS();
+#endif
+
 
 
 // 暗記ボタンクラス
@@ -32,6 +41,7 @@ void AzKeyboard::start_keyboard() {
     
     // bluetoothキーボード開始
     ESP_LOGD(LOG_TAG, "mmm: %D %D\n", heap_caps_get_free_size(MALLOC_CAP_32BIT), heap_caps_get_free_size(MALLOC_CAP_8BIT) );
+
     bleKeyboard.begin(keyboard_name_str);
     ESP_LOGD(LOG_TAG, "mmm: %D %D\n", heap_caps_get_free_size(MALLOC_CAP_32BIT), heap_caps_get_free_size(MALLOC_CAP_8BIT) );
 
