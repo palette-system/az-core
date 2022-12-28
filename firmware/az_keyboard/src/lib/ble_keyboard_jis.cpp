@@ -1,4 +1,5 @@
-#if CONFIG_IDF_TARGET_ESP32
+#if CONFIG_IDF_FIRMWARE_CHIP_ID == 0x00
+// 0x00 = ノーマルESP32
 
 #include <NimBLEDevice.h>
 #include <NimBLEUtils.h>
@@ -484,4 +485,4 @@ void BleKeyboardJIS::setConnInterval(int interval_type)
     
 }
 
-#endif // CONFIG_IDF_TARGET_ESP32
+#endif // CONFIG_IDF_FIRMWARE_CHIP_ID == 0x0009

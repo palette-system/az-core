@@ -1,6 +1,7 @@
 #ifndef BleKeyboardJIS_h
 #define BleKeyboardJIS_h
-#if CONFIG_IDF_TARGET_ESP32
+#if CONFIG_IDF_FIRMWARE_CHIP_ID == 0x00
+// 0x00 = ノーマルESP32
 
 #include "sdkconfig.h"
 #if defined(CONFIG_BT_ENABLED)
@@ -89,7 +90,7 @@ class BleKeyboardJIS
 
 
 
-#endif // CONFIG_IDF_TARGET_ESP32
 #endif // CONFIG_BT_NIMBLE_ROLE_PERIPHERAL
 #endif // CONFIG_BT_ENABLED
-#endif
+#endif // CONFIG_IDF_FIRMWARE_CHIP_ID == 0x00
+#endif // BleKeyboardJIS_h

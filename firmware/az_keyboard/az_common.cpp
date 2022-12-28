@@ -1295,7 +1295,8 @@ void AzCommon::pin_setup() {
 }
 
 
-#if CONFIG_IDF_TARGET_ESP32
+#if CONFIG_IDF_FIRMWARE_CHIP_ID == 0x00
+// 0x00 = ノーマルESP32
 
 // アナログ入力ピン初期化(ESP32)
 void AzCommon::pinmode_analog(int gpio_no) {
@@ -1658,7 +1659,8 @@ void AzCommon::key_read(void) {
     }
     // タッチ入力の取得
     for (i=0; i<touch_len; i++) {
-#if CONFIG_IDF_TARGET_ESP32
+#if CONFIG_IDF_FIRMWARE_CHIP_ID == 0x00
+        // 0x00 = ノーマルESP32
         // タッチ機能はESP32にしかない
         if (touchRead(touch_list[i]) < 25) {
             input_key[n] = 1;

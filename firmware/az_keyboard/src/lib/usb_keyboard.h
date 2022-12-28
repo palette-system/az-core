@@ -1,3 +1,6 @@
+#if CONFIG_IDF_FIRMWARE_CHIP_ID == 0x0009
+// 0x0009 = ESP32 S3
+
 #ifndef USBKeyboard_h
 #define USBKeyboard_h
 
@@ -57,4 +60,5 @@ class CustomHIDDevice: public USBHIDDevice {
 
 
 
+#endif
 #endif

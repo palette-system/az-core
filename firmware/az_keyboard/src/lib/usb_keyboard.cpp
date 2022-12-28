@@ -1,3 +1,5 @@
+#if CONFIG_IDF_FIRMWARE_CHIP_ID == 0x0009
+// 0x0009 = ESP32 S3
 
 #include "usb_keyboard.h"
 
@@ -376,3 +378,4 @@ void CustomHIDDevice::setConnInterval(int interval_type) {
 
 
 
+#endif

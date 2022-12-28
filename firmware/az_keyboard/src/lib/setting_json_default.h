@@ -1,5 +1,6 @@
 
-#if CONFIG_IDF_TARGET_ESP32S3
+#if CONFIG_IDF_FIRMWARE_CHIP_ID == 0x0009
+// 0x0009 = ESP32 S3
 
 // ESP32-S3 用設定JSON
 // file name : setting_atoms3_default_min.json
