@@ -4,13 +4,13 @@
 #include "src/lib/ankey.h"
 #include "src/lib/dakey.h"
 
-#if CONFIG_IDF_TARGET_ESP32S3
-// ESP32 S3 の場合は 有線キーボード
+#if KEYBOARD_TYPE == 1
+// 有線キーボード
 #include "src/lib/usb_keyboard.h"
 // 有線キーボードクラス
 CustomHIDDevice bleKeyboard = CustomHIDDevice();
 #else
-// ESP32 、 ESP32 C3 の場合は BLEキーボード
+// BLEキーボード
 #include "src/lib/ble_keyboard_jis.h"
 // BLEキーボードクラス
 BleKeyboardJIS bleKeyboard = BleKeyboardJIS();

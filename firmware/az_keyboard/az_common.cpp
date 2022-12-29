@@ -1,3 +1,4 @@
+#include "az_config.h"
 #include "az_common.h"
 #include "src/lib/cnc_table.h"
 
@@ -1295,7 +1296,7 @@ void AzCommon::pin_setup() {
 }
 
 
-#if CONFIG_IDF_FIRMWARE_CHIP_ID == 0x00
+#if CPUTYPE_ESP32 == 0
 // 0x00 = ノーマルESP32
 
 // アナログ入力ピン初期化(ESP32)
@@ -1659,7 +1660,7 @@ void AzCommon::key_read(void) {
     }
     // タッチ入力の取得
     for (i=0; i<touch_len; i++) {
-#if CONFIG_IDF_FIRMWARE_CHIP_ID == 0x00
+#if CPUTYPE_ESP32 == 0
         // 0x00 = ノーマルESP32
         // タッチ機能はESP32にしかない
         if (touchRead(touch_list[i]) < 25) {

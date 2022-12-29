@@ -1,4 +1,6 @@
-#if CONFIG_IDF_FIRMWARE_CHIP_ID == 0x00
+#include "../../az_config.h"
+
+#if KEYBOARD_TYPE == 0
 // 0x00 = ノーマルESP32
 
 #include <NimBLEDevice.h>
@@ -485,4 +487,4 @@ void BleKeyboardJIS::setConnInterval(int interval_type)
     
 }
 
-#endif // CONFIG_IDF_FIRMWARE_CHIP_ID == 0x0009
+#endif // KEYBOARD_TYPE == 0

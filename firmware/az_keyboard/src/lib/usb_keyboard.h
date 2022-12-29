@@ -1,4 +1,6 @@
-#if CONFIG_IDF_FIRMWARE_CHIP_ID == 0x0009
+#include "../../az_config.h"
+
+#if KEYBOARD_TYPE == 1
 // 0x0009 = ESP32 S3
 
 #ifndef USBKeyboard_h
