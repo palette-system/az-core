@@ -15,6 +15,7 @@ class AzKeyboard
         void key_repeat_exec(); // キー連打処理
         void send_webhook(char *jstr); // WEBフックを送信する
         void send_string(char *send_char); // テキストを送信する
+        void hold_press(int hold, int key_num); // hold キーを押す
         void key_down_action(int key_num); // キーが押された時のアクション
         void key_up_action(int key_num); // キーが離された時のアクション
         void tap_key_disable_all(); // tap / hold の単押しを無効化する

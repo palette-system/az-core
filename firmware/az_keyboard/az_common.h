@@ -36,7 +36,7 @@
 #define KEY_INPUT_MAX  128
 
 // レイヤー切り替え同時押し許容数
-#define PRESS_KEY_MAX 16
+#define PRESS_KEY_MAX 8
 
 // マウス移動ボタン同時押し許容数
 #define PRESS_MOUSE_MAX 4
@@ -62,7 +62,7 @@
 
 
 // ファームウェアのバージョン文字
-#define FIRMWARE_VERSION   "000113"
+#define FIRMWARE_VERSION   "000114"
 
 // EEPROMに保存しているデータのバージョン文字列
 #define EEP_DATA_VERSION    "AZC001"
@@ -375,6 +375,9 @@ extern int default_layer_no;
 extern int select_layer_no;
 extern int last_select_layer_key; // レイヤーボタン最後に押されたボタン(これが離されたらレイヤーリセット)
 
+// holdの設定
+extern uint8_t hold_type;
+extern uint8_t hold_time;
 
 // 押している最中のキーデータ
 extern press_key_data press_key_list[PRESS_KEY_MAX];
