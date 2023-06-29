@@ -302,11 +302,12 @@ void AzKeyboard::key_down_action(int key_num) {
         setting_normal_input normal_input;
         memcpy(&normal_input, key_set.data, sizeof(setting_normal_input));
         if (normal_input.hold) {
+            m = select_layer_no;
             // hold の場合押した時にhold押したよを送信
             if (hold_type == 1) { // すぐにholdを送信
                 hold_press(normal_input.hold, key_num);
             }
-            press_key_list_push(9, key_num, normal_input.hold, select_layer_no, -1); // アクションタイプは9:holdにする
+            press_key_list_push(9, key_num, normal_input.hold, m, -1); // アクションタイプは9:holdにする
         } else {
             // hold が無ければ通常のキー入力
             for (i=0; i<normal_input.key_length; i++) {
