@@ -62,7 +62,7 @@
 
 
 // ファームウェアのバージョン文字
-#define FIRMWARE_VERSION   "000115"
+#define FIRMWARE_VERSION   "000116"
 
 // EEPROMに保存しているデータのバージョン文字列
 #define EEP_DATA_VERSION    "AZC001"
@@ -328,8 +328,6 @@ extern short *row_list;
 extern short *direct_list;
 extern short *touch_list;
 
-extern short ioxp_len;
-extern short *ioxp_list;
 extern short ioxp_sda;
 extern short ioxp_scl;
 extern int ioxp_hz;

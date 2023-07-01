@@ -125,7 +125,6 @@ short *row_list;
 short *direct_list;
 short *touch_list;
 
-short ioxp_len;
 short *ioxp_list;
 short ioxp_sda;
 short ioxp_scl;
@@ -1260,32 +1259,7 @@ void AzCommon::pin_setup() {
             Wire.setClock(ioxp_hz);
         } else {
             delay(1000);
-        }
-
-        // IOエキスパンダ初期化
-        for (i=0; i<ioxp_len; i++) {
-            x = ioxp_list[i] - 32;
-            if (ioxp_status[x] < 0) {
-                ioxp_obj[x] = new Adafruit_MCP23X17();
-                ioxp_status[x] = 0;
-            }
-            if (ioxp_status[x] < 1) {
-                if (ioxp_obj[x]->begin_I2C(ioxp_list[i], &Wire)) {
-                    ioxp_status[x] = 1;
-                    ioxp_hash[x] = 1;
-                } else {
-                    // 初期化失敗
-                    continue;
-                }
-            }
-            delay(10);
-            for (j = 0; j < 16; j++) {
-                ioxp_obj[x]->pinMode(j, INPUT_PULLUP);
-            }
-            delay(50);
-        }
-        key_input_length += (ioxp_len * 16);
-        
+        }        
 
         // I2C接続のオプション初期化
         for (i=0; i<i2copt_len; i++) {

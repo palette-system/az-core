@@ -797,6 +797,71 @@ void HidrawCallbackExec(int data_length) {
 			return;
 
 		}
+		case id_set_pin_set: {
+			// ESP32 本体の direct, touch, col, row を変更する(pinModeの初期化もする)
+			// 現状でi2c の設定がされている場合は一旦無しにしちゃう
+			// (i2c で使ってるピンがioで設定されるとややこしい話になる)
+			if (ioxp_sda >= 0 && ioxp_scl >= 0) {
+				// i2c 通信終了
+				// Wire.end(); // ボード ESP32 の 1.0.6 の Wire に end() が無かった
+				// ピンの設定削除
+				ioxp_sda = -1;
+				ioxp_scl = -1;
+			}
+			if (i2copt_len > 0) {
+				i2copt_len = -1;
+				delete[] i2copt;
+			}
+			// 現状のピン設定を解放
+			delete[] direct_list;
+			delete[] touch_list;
+			delete[] col_list;
+			delete[] row_list;
+			// 読み込み開始バイト
+			m = 1;
+			// direct ピン設定
+			direct_len = remap_buf[m]; // direct ピンの設定数取得
+			m++;
+			direct_list = new short[direct_len];
+			for (i=0; i<direct_len; i++) {
+				direct_list[i] = remap_buf[m];
+				m++;
+			}
+			// touch ピン設定
+			touch_len = remap_buf[m]; // touch ピンの設定数取得
+			m++;
+			touch_list = new short[touch_len];
+			for (i=0; i<touch_len; i++) {
+				touch_list[i] = remap_buf[m];
+				m++;
+			}
+			// col ピン設定
+			col_len = remap_buf[m]; // touch ピンの設定数取得
+			m++;
+			col_list = new short[col_len];
+			for (i=0; i<col_len; i++) {
+				col_list[i] = remap_buf[m];
+				m++;
+			}
+			// row ピン設定
+			row_len = remap_buf[m]; // touch ピンの設定数取得
+			m++;
+			row_list = new short[row_len];
+			for (i=0; i<row_len; i++) {
+				row_list[i] = remap_buf[m];
+				m++;
+			}
+			// キー数計算
+			key_input_length = (col_len * row_len) + direct_len + touch_len;
+			// レスポンスデータ作成
+			send_buf[0] = id_set_pin_set; // ピン設定
+			send_buf[1] = ((key_input_length >> 24) & 0xff);
+			send_buf[2] = ((key_input_length >> 16) & 0xff);
+			send_buf[3] = ((key_input_length >> 8) & 0xff);
+			send_buf[4] = (key_input_length & 0xff);
+			for (i=2; i<32; i++) send_buf[i] = 0x00;
+			return;
+		}
 		case id_get_firmware_status: {
 			// ファームウェアステータス取得
 			sprintf((char *)send_buf, "%c%s-%s", id_get_firmware_status, FIRMWARE_VERSION, EEP_DATA_VERSION);

@@ -32,8 +32,8 @@ $(function(){
         azesp.write_firm([
             {"address": 0xe000, "data": "./data/boot_app0.bin"},
             {"address": 0x1000, "data": "./data/bootloader_qio_80m.bin"},
-            {"address": 0x10000, "data": "./data/az_keyboard.0.1.15.ino.bin"},
-            {"address": 0x8000, "data": "./data/az_keyboard.ino.partitions.0.1.15.bin"}
+            {"address": 0x10000, "data": "./data/az_keyboard.0.1.16.ino.bin"},
+            {"address": 0x8000, "data": "./data/az_keyboard.ino.partitions.0.1.16.bin"}
         ], 921600, "write_info");
         return false;
     });
@@ -98,7 +98,7 @@ $(function(){
 <br>
 一番最初の書き込みはROMの中を初期化するので、書込み終了後起動するまで1分ほどかかりますが、M5StampのLEDが緑色に光るまでそのままお待ち下さい。<br><br>
 
-<a id="write_firm" class="link_btn">　Version　0.1.15　書込み</a><br>
+<a id="write_firm" class="link_btn">　Version　0.1.16　書込み</a><br>
 <div id="write_info"></div>
 <br><br>
 
