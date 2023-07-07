@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<title>パレットシステム AZ-M5ortho インフォメーション</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="css/style.css">
+<script src="./js/fixmenu_pagetop.js"></script>
+<script src="./js/azesptool.js"></script>
+<!--
+<script language="JavaScript" src="./js/utilities.js"></script>
+<script language="JavaScript" src="./js/az_esploader.js"></script>
+-->
+<!--[if lt IE 9]>
+<script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+<script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+<![endif]-->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+<script>
+
+
+$(function(){
+    $("#write_firm").click(function() {
+        azesp.write_firm([
+            {"address": 0xe000, "data": "./data/boot_app0.bin"},
+            {"address": 0x1000, "data": "./data/bootloader_qio_80m.bin"},
+            {"address": 0x10000, "data": "./data/az_keyboard.0.1.16.ino.bin"},
+            {"address": 0x8000, "data": "./data/az_keyboard.ino.partitions.0.1.16.bin"}
+        ], 921600, "write_info");
+    });
+
+    $("#erase_flash").click(function() {
+        azesp.erase_flash(921600, "erase_info");
+        return false;
+    });
+
+});
+
+</script>
+</head>
+
+<body>
+
+<!--
+<header>
+</header>
+-->
+
+<div id="container">
+
+<div id="contents">
+
+<section id="new">
+
+    <h2>ESP32開発ボードをキーボードとして使用する</h2>
+    <div class="content_body">
+        ESP32開発ボード(ESP32-DevKitC-32E)をキーボードとして使用するためには、まずESP32にAZ-CORE用のファームウェアを書き込みます。<br>
+        ファームウェアが書き込まれるとESP32開発ボードはAZ-COREとして動作するので、PCからBluetoothでペアリングできるようになります。<br>
+        PCとペアリングできると、AZキーボード専用の設定ツールAZTOOLから設定変更ができるようになります。<br>
+        AZTOOL上でそれぞれのキーボードの設定をインポートする事でいろいろなキーボードとして使用できるようになります。<br>
+        <br>
+        ※ AZ-COREはパレットシステムが販売している4キーのマクロパッドです。<br>
+    </div>
+    <br><br>
+    
+    <h2>１．PCにドライバをインストールする</h2>
+    <div class="content_body">
+        <table cellpadding="10"><tr><td valign="top">
+            <img src="./img/driver_download.jpg" width="600" height="191">
+            </td><td valign="top">
+            まず初めにドライバをインストールします。<br>
+            ESP32開発ボードにファームウェアを書き込むにはシリアル変換のドライバが必要です。<br>
+            Arduino等でESP32に書込みができている方はインストールしなくても大丈夫です。<br>
+            ドライバは下記サイトから <b>CP210x_VCP_***</b> をダウンロードしてインストールして下さい。<br><br>
+            <b>ESP32 Downloader Kit 商品ページ</b><br><a href="https://docs.m5stack.com/en/accessory/esp32_downloader_kit" target="_blank">https://docs.m5stack.com/en/accessory/esp32_downloader_kit</a><br>
+            <br><br>
+            ※ 商品ページの下の方にドライバのダウンロードリンクがあるのでそちらからダウンロードしてインストールして下さい。<br>
+        </td></tr></table>
+    </div>
+    <br><br>
+        
+    <h2>２．ESP32開発ボードにAZ-COREのファームウェアの書込む</h2>
+    <div class="content_body">
+
+        ESP32開発ボードをPCとUSBで接続して、下記の書込みボタンを押して下さい。<br>
+        正常に認識されるとファームウェアの書き込みが始まり、「Write Complated.」と表示されたら完了です。<br>
+        うまく書込みが出来ない場合は「ESP32 クリア」のボタンを押すと一度ESP32のメモリをリセットするので、クリアしてからもう一度書込みを試して下さい。<br>
+        <br><br>
+
+        <a id="write_firm" class="link_btn">　Version　0.1.16　書込み</a><br>
+        <div id="write_info"></div>
+        <br><br>
+        
+        <a id="erase_flash" class="link_btn">　ESP32　クリア</a><br>
+        <div id="erase_info"></div>
+        <br><br>
+        
+        ※ ブラウザは Chrome を使用して下さい。<br>
+        ※ 書込み中はブラウザを閉じないで下さい。<br>
+        ※ エラーが起こる場合はUSBを抜き差しし、ページを再読み込みして下さい。<br>
+        ※ ケーブルや刺したUSB端子によってうまく書き込めない場合があるので、他のケーブルや、差し込むUSB端子を変えて試して下さい。<br>
+        ※ 書込みには esp-web-flasher を使用しています。<br>
+        <br><br>
+        
+        ソースコード：<br>
+        <a href="https://github.com/palette-system/az-core/tree/main/firmware/az_keyboard" target="_blank">https://github.com/palette-system/az-core/tree/main/firmware/az_keyboard</a><br>
+        <br><br>
+        
+    </div>
+
+    <h2>３．AZTOOLを使用して設定をインポートする</h2>
+    <div class="content_body">
+        PCのBluetoothからAZ-COREを探してペアリングして下さい。<br>
+        ペアリングできたら下記を参考に各キーボードの設定をインポートして下さい。<br><br>
+        <a href='./import_zip.html' target='_blank' class="link_btn">設定のインポート</a>
+        <br><br>
+        ※ ESP32開発ボードではなくAZ-COREとして認識されます。<br>
+        <br><br>
+    </div>
+
+</section>
+<!--/#new-->
+
+
+
+<!--ページの上部に戻る「↑」ボタン-->
+<p class="nav-fix-pos-pagetop"><a href="#">↑</a></p>
+
+</div>
+</div>
+
+</body>
+</html>
