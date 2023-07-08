@@ -6,6 +6,27 @@
 Wirelib::Wirelib() {
 }
 
+// I2Cへデータ送信
+int Wirelib::write(int addr, uint8_t *send_data, int send_len) {
+    int i;
+    Wire.beginTransmission(addr);
+    for (i=0; i<send_len; i++) {
+        Wire.write(send_data[i]);
+    }
+    return Wire.endTransmission();
+}
+
+// I2Cからデータ読み込み
+int Wirelib::read(int addr, uint8_t *read_data, int read_len) {
+    int i;
+    Wire.requestFrom(addr, read_len);
+    for (i=0; i<read_len; i++) {
+        if (!Wire.available()) break;
+        read_data[i] = Wire.read();
+    }
+    return i;
+}
+
 // ロータリエンコーダの入力取得
 uint8_t Wirelib::read_rotary(int addr) {
     Wire.requestFrom(addr, 1); // 指定したアドレスのTinyにデータ取得要求
@@ -37,3 +58,14 @@ tracktall_pim447_data Wirelib::read_trackball_pim447(int addr) {
     r.click = Wire.read(); // スイッチ
     return r;
 };
+
+// AZエクスパンダのキー入力状態を取得
+azexpanda_data Wirelib::read_azexpanda_key(int addr) {
+    int i;
+    azexpanda_data r;
+    for (i=0; i<16; i++) r.key_input[i] = 0x00;
+    Wire.requestFrom(addr, 2);
+    r.key_input[0] = Wire.read();
+    r.key_input[1] = Wire.read();
+    return r;
+}
