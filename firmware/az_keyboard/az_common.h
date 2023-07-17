@@ -184,6 +184,12 @@ struct i2c_pim447 {
     uint8_t rotate; // マウスの向き
 };
 
+// I2Cオプション AZ-Expander 
+struct i2c_azxp {
+    uint8_t setting[18]; // AZ-Expanderに送る設定データ
+    azxp_key_info key_info; // キー読み込みのバイト数とか
+};
+
 // i2cオプションの設定
 struct i2c_option {
     uint8_t opt_type; // オプションのタイプ 1: ioエキスパンダキーボード

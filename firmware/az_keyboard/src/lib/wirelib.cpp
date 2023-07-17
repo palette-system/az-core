@@ -59,13 +59,49 @@ tracktall_pim447_data Wirelib::read_trackball_pim447(int addr) {
     return r;
 };
 
-// AZエクスパンダのキー入力状態を取得
-azexpanda_data Wirelib::read_azexpanda_key(int addr) {
+// AZエクスパンダ コンフィグ送信
+void Wirelib::send_azxp_setting(int addr, uint8_t *setting) {
     int i;
-    azexpanda_data r;
-    for (i=0; i<16; i++) r.key_input[i] = 0x00;
+    // コンフィグ送信
+    Wire.beginTransmission(addr);
+    Wire.write(0x01); // コンフィグ設定コマンド
+    for (i=0; i<18; i++) {
+        Wire.write(setting[i]);
+    }
+    Wire.endTransmission();
+    // 結果取得
     Wire.requestFrom(addr, 2);
-    r.key_input[0] = Wire.read();
-    r.key_input[1] = Wire.read();
+    while (Wire.available()) Wire.read(); // とりあえず空読み込み
+};
+
+// AZエクスパンダ キー数取得
+azxp_key_info Wirelib::read_key_info(int addr) {
+    azxp_key_info r;
+    // コマンド送信
+    Wire.beginTransmission(addr);
+    Wire.write(0x03); // キー数取得コマンド
+    Wire.endTransmission();
+    // 結果取得
+    Wire.requestFrom(addr, 2);
+    r.key_count = (Wire.available())? Wire.read(): 0;
+    r.key_byte = (Wire.available())? Wire.read(): 0;
+    return r;
+}
+
+// AZエクスパンダのキー入力状態を取得
+azxp_key_data Wirelib::read_azxp_key(int addr, azxp_key_info kinfo) {
+    int i;
+    azxp_key_data r;
+    for (i=0; i<16; i++) r.key_input[i] = 0x00;
+    // コマンド送信
+    Wire.beginTransmission(addr);
+    Wire.write(0x04); // キー読み込みコマンド
+    Wire.endTransmission();
+    // 結果取得
+    Wire.requestFrom(addr, kinfo.key_byte); // キー読み込みコマンド
+    for (i=0; i<kinfo.key_byte; i++) {
+        if (i>16) break;
+        r.key_input[i] = (Wire.available())? Wire.read(): 0;
+    }
     return r;
 }

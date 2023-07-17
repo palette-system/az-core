@@ -258,7 +258,6 @@ void HidrawCallbackExec(int data_length) {
     uint8_t *command_id   = &(remap_buf[0]);
     uint8_t *command_data = &(remap_buf[1]);
 	tracktall_pim447_data pim447_data_obj;
-	azexpanda_data azex_read_data_obj;
 
 	// 設定変更がされていて設定変更以外のコマンドが飛んできたら設定を保存
 	if (remap_change_flag && *command_id != 0x05) {
@@ -837,7 +836,7 @@ void HidrawCallbackExec(int data_length) {
 				m++;
 			}
 			// col ピン設定
-			col_len = remap_buf[m]; // touch ピンの設定数取得
+			col_len = remap_buf[m]; // col ピンの設定数取得
 			m++;
 			col_list = new short[col_len];
 			for (i=0; i<col_len; i++) {
@@ -845,7 +844,7 @@ void HidrawCallbackExec(int data_length) {
 				m++;
 			}
 			// row ピン設定
-			row_len = remap_buf[m]; // touch ピンの設定数取得
+			row_len = remap_buf[m]; // row ピンの設定数取得
 			m++;
 			row_list = new short[row_len];
 			for (i=0; i<row_len; i++) {
@@ -853,7 +852,7 @@ void HidrawCallbackExec(int data_length) {
 				m++;
 			}
 			// キー数計算
-			key_input_length = (col_len * row_len) + direct_len + touch_len;
+			common_cls.pin_setup();
 			// レスポンスデータ作成
 			send_buf[0] = id_set_pin_set; // ピン設定
 			send_buf[1] = ((key_input_length >> 24) & 0xff);
@@ -883,18 +882,6 @@ void HidrawCallbackExec(int data_length) {
 			send_buf[1] = m; // 読み込みに行くアドレス
 			send_buf[2] = wirelib_cls.write(m, &remap_buf[3], l); // 書込み
 			for (i=2; i<32; i++) send_buf[i] = 0x00;
-			return;
-		}
-		case id_azex_key_read: {
-			// AZエクスパンダのキー入力情報を取得
-		    m = remap_buf[1]; // 読み込みに行くアドレス取得
-			send_buf[0] = id_azex_key_read; // キーの入力状態
-			send_buf[1] = m; // 読み込みに行くアドレス
-			azex_read_data_obj = wirelib_cls.read_azexpanda_key(m); // キーの入力状態取得
-			for (i=0; i<16; i++) {
-				send_buf[2+i] = azex_read_data_obj.key_input[i];
-			}
-			for (i=17; i<32; i++) send_buf[i] = 0x00;
 			return;
 		}
 		case id_get_firmware_status: {

@@ -101,7 +101,6 @@ enum via_command_id {
     id_set_pin_set                          = 0x41,
     id_i2c_read                             = 0x42,
     id_i2c_write                            = 0x43,
-    id_azex_key_read                        = 0x44,
 
     // ステータス取得
     id_get_firmware_status                  = 0x60,
