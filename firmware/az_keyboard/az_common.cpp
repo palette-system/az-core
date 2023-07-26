@@ -1312,65 +1312,6 @@ void AzCommon::pin_setup() {
 }
 
 
-#if CPUTYPE_ESP32 == 0
-// 0x00 = ノーマルESP32
-
-// アナログ入力ピン初期化(ESP32)
-void AzCommon::pinmode_analog(int gpio_no) {
-    int i;
-    i = this->get_adc_num(gpio_no); // adc1か adc2か
-    if (i == 1) {
-        adc1_config_width(ADC_WIDTH_12Bit);
-        adc1_config_channel_atten(this->get_channel_1(gpio_no), ADC_ATTEN_11db);
-    } else if (i == 2) {
-        // adc2_config_width(ADC_WIDTH_12Bit); // 2の方は電圧取得時にBIT数を指定する
-        adc2_config_channel_atten(this->get_channel_2(gpio_no), ADC_ATTEN_11db);
-    }
-}
-
-// アナログピンの入力を取得(ESP32)
-int AzCommon::analog_read(int gpio_no) {
-    int i, r = -1;
-    i = this->get_adc_num(gpio_no); // adc1か adc2か
-    if (i == 1) {
-        r = adc1_get_voltage(this->get_channel_1(gpio_no));
-    } else if (i == 2) {
-        adc2_get_raw(this->get_channel_2(gpio_no), ADC_WIDTH_BIT_12, &r);
-    }
-    return r;
-}
-
-// GPIOの番号からADCのチャネルを取得する
-adc1_channel_t AzCommon::get_channel_1(int gpio_no) {
-    // 参考 通常のESP32 https://docs.espressif.com/projects/esp-idf/zh_CN/latest/esp32/api-reference/peripherals/adc.html
-    if (gpio_no == 36) return ADC1_CHANNEL_0;
-    if (gpio_no == 37) return ADC1_CHANNEL_1;
-    if (gpio_no == 38) return ADC1_CHANNEL_2;
-    if (gpio_no == 39) return ADC1_CHANNEL_3;
-    if (gpio_no == 32) return ADC1_CHANNEL_4;
-    if (gpio_no == 33) return ADC1_CHANNEL_5;
-    if (gpio_no == 34) return ADC1_CHANNEL_6;
-    if (gpio_no == 35) return ADC1_CHANNEL_7;
-    return ADC1_CHANNEL_0; // ADCが無いピンを指定されたらとりあえずgpio36を返しとく
-}
-
-// GPIOの番号からADCのチャネルを取得する
-adc2_channel_t AzCommon::get_channel_2(int gpio_no) {
-    // 参考 通常のESP32 https://docs.espressif.com/projects/esp-idf/zh_CN/latest/esp32/api-reference/peripherals/adc.html
-    if (gpio_no == 4) return ADC2_CHANNEL_0;
-    if (gpio_no == 0) return ADC2_CHANNEL_1;
-    if (gpio_no == 2) return ADC2_CHANNEL_2;
-    if (gpio_no == 15) return ADC2_CHANNEL_3;
-    if (gpio_no == 13) return ADC2_CHANNEL_4;
-    if (gpio_no == 12) return ADC2_CHANNEL_5;
-    if (gpio_no == 14) return ADC2_CHANNEL_6;
-    if (gpio_no == 27) return ADC2_CHANNEL_7;
-    if (gpio_no == 25) return ADC2_CHANNEL_8;
-    if (gpio_no == 26) return ADC2_CHANNEL_9;
-    return ADC2_CHANNEL_0; // ADCが無いピンを指定されたらとりあえずgpio4を返しとく
-}
-
-#else
 
 // アナログ入力ピン初期化(ESP32)
 void AzCommon::pinmode_analog(int gpio_no) {
@@ -1381,16 +1322,6 @@ int AzCommon::analog_read(int gpio_no) {
     return -1;
 }
 
-#endif
-
-// GPIOの番号からADC1かADC2かを返す
-int AzCommon::get_adc_num(int gpio_no) {
-    if (gpio_no == 36 || gpio_no == 37 || gpio_no == 38 || gpio_no == 39 
-        || gpio_no == 32 || gpio_no == 33 || gpio_no == 34 || gpio_no == 35) return 1;
-    if (gpio_no == 4 || gpio_no == 0 || gpio_no == 2 || gpio_no == 15 || gpio_no == 13 || gpio_no == 12 
-        || gpio_no == 14 || gpio_no == 27 || gpio_no == 25 || gpio_no == 26) return 2;
-    return 0;
-}
 
 // 電源電圧を取得
 int AzCommon::get_power_vol() {

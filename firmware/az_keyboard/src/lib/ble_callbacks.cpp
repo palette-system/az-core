@@ -74,7 +74,7 @@ DescriptorCallbacks::DescriptorCallbacks(void) {
 };
 
 void DescriptorCallbacks::onWrite(NimBLEDescriptor* pDescriptor) {
-    std::string dscVal((char*)pDescriptor->getValue(), pDescriptor->getLength());
+    // std::string dscVal((char*)pDescriptor->getValue(), pDescriptor->getLength());
     // Serial.print("Descriptor witten value:");
     // Serial.println(dscVal.c_str());
 };
@@ -131,7 +131,7 @@ RemapDescriptorCallbacks::RemapDescriptorCallbacks(void) {
 };
 
 void RemapDescriptorCallbacks::onWrite(NimBLEDescriptor* pDescriptor) {
-    std::string dscVal((char*)pDescriptor->getValue(), pDescriptor->getLength());
+    // std::string dscVal((char*)pDescriptor->getValue(), pDescriptor->getLength());
     // Serial.print("RemapDescriptorCallbacks: onWrite: ");
     // Serial.println(dscVal.c_str());
 };
