@@ -13,9 +13,11 @@
 #include <WiFiMulti.h>
 #include <HTTPClient.h>
 #include <Wire.h>
+#include <Adafruit_SSD1306.h> 
 #include <Adafruit_NeoPixel.h>
 #include <Adafruit_MCP23X17.h>
 
+#include "src/lib/oled.h"
 #include "src/lib/neopixel.h"
 #include "src/lib/HTTPClient_my.h"
 #include "src/lib/wirelib.h"
@@ -62,7 +64,7 @@
 
 
 // ファームウェアのバージョン文字
-#define FIRMWARE_VERSION   "000117"
+#define FIRMWARE_VERSION   "000118"
 
 // EEPROMに保存しているデータのバージョン文字列
 #define EEP_DATA_VERSION    "AZC001"

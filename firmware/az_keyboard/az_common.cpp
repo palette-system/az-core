@@ -55,6 +55,14 @@ int8_t keyboard_status;
 // rgb_led制御用クラス
 Neopixel rgb_led_cls = Neopixel();
 
+// i2c OLEDクラス
+Oled *oled_cls;
+
+// メインOLEDの設定
+short oled_main_width = -1;
+short oled_main_height = -1;
+short oled_main_addr = -1;
+
 // I2Cライブラリ用クラス
 Wirelib wirelib_cls = Wirelib();
 
@@ -825,6 +833,22 @@ void AzCommon::load_setting_json() {
                 memcpy(i2copt[j].data, &i2cazxp_obj, sizeof(i2c_azxp));
                 j++;
 
+            } else if (opt_type == 6) { // 6 = OLED(メイン)
+                oled_main_width = -1;
+                oled_main_height = -1;
+                oled_main_addr = -1;
+                // 設定内容を取得
+                if (setting_obj["i2c_option"][i].containsKey("width")) {
+                    oled_main_width = setting_obj["i2c_option"][i]["width"].as<signed int>();
+                }
+                if (setting_obj["i2c_option"][i].containsKey("height")) {
+                    oled_main_height = setting_obj["i2c_option"][i]["height"].as<signed int>();
+                }
+                if (setting_obj["i2c_option"][i].containsKey("addr")) {
+                    oled_main_addr = setting_obj["i2c_option"][i]["addr"].as<signed int>();
+                }
+                j++;
+
             }
 
         }
@@ -1283,11 +1307,18 @@ void AzCommon::pin_setup() {
     // I2C初期化
     if (ioxp_sda >= 0 && ioxp_scl >= 0) {
 
+        // I2Cクラス初期化
         if (Wire.begin(ioxp_sda, ioxp_scl)) {
             Wire.setClock(ioxp_hz);
         } else {
             delay(1000);
         }        
+
+        // メインOLED初期化
+        if (oled_main_addr > 0 && oled_main_width > 0 && oled_main_height > 0) {
+            oled_cls = new Oled();
+            oled_cls->begin(oled_main_width, oled_main_height, oled_main_addr, ioxp_hz);
+        }
 
         // I2C接続のオプション初期化
         for (i=0; i<i2copt_len; i++) {
