@@ -34,9 +34,6 @@
   static const char* LOG_TAG = "AZM";
 #endif
 
-// メモリに保持するキーの数(メモリを確保するサイズ)
-#define KEY_INPUT_MAX  128
-
 // レイヤー切り替え同時押し許容数
 #define PRESS_KEY_MAX 8
 
@@ -62,6 +59,8 @@
 #define BLE_HID_VID  0xE502
 #define BLE_HID_PID  0x0200
 
+// キースキャンループの待ち時間デフォルト(ms)
+#define LOOP_DELAY_DEFAULT  5
 
 // ファームウェアのバージョン文字
 #define FIRMWARE_VERSION   "000118"
@@ -81,7 +80,16 @@
 // 打鍵数を自動保存するかどうかの設定を保存するファイルパス
 #define  KEY_COUNT_AUTO_SAVE_PATH  "/key_count_auto_save"
 
+// デバッグモード 0=OFF / 1=ON
 #define  AZ_DEBUG_MODE 0
+
+// アクチュエーションポイントデフォルト
+#define  ACTUATION_POINT_DEFAULT  120
+
+// ラピットトリガーデフォルト
+#define  RAPID_TRIGGER_DEFAULT  100
+
+
 
 // 今押されているボタンの情報
 struct press_key_data {
@@ -118,9 +126,9 @@ struct mrom_data_set {
 // 通常キー入力
 struct setting_normal_input {
     uint8_t key_length;
-    uint16_t *key;
-    uint16_t hold;
-    short repeat_interval;
+    uint16_t *key; // 通常入力
+    uint16_t hold; // ホールド(長押し)
+    short repeat_interval; // 連打設定
 };
 
 // マウス移動
@@ -142,6 +150,8 @@ struct setting_layer_move {
 struct setting_key_press {
     short layer; // どのレイヤーか
     short key_num; // どのキーか
+    uint8_t actuation_point; // アクチュエーションポイント
+    uint8_t rapid_trigger; // ラピットトリガー
     short action_type; // 入力するタイプ
     short data_size; // データのサイズ
     char *data; // 入力データ
@@ -257,10 +267,8 @@ class AzCommon
         int remove_file(char *file_path); // ファイルを削除する
         int i2c_setup(int p, i2c_option *opt); // IOエキスパンダの初期化(戻り値：増えるキーの数)
         void pin_setup(); // キーの入力ピンの初期化
-        void pinmode_analog(int gpio_no); // アナログ入力ピン初期化
-        int analog_read(int gpio_no); // アナログピンの入力を取得
-        int get_power_vol(); // 電源電圧を取得
         bool layers_exists(int layer_no); // レイヤーが存在するか確認
+        void layer_set(int layer_no); // 現在のレイヤーを指定したレイヤーにする
         setting_key_press get_key_setting(int layer_id, int key_num); // 指定したキーの入力設定を取得する
         void load_data(); // EEPROMからデータをロードする
         void save_data(); // EEPROMに保存する
@@ -270,11 +278,14 @@ class AzCommon
         void set_boot_mode(int set_mode); // 起動モードを切り替えてEEPROMに保存
         void change_mode(int set_mode); // モードを切り替えて再起動
         int i2c_read(int p, i2c_option *opt, char *read_data); // I2C機器のキー状態を取得
+        int get_key_status(int key_num); // 指定したキーの入力ステータス取得
         void key_read(); // 現在のキーの状態を取得
         void key_old_copy(); // 現在のキーの状態を過去用配列にコピー
-        char input_key[KEY_INPUT_MAX]; // 今入力中のキー
-        char input_key_last[KEY_INPUT_MAX]; // 最後にチェックした入力中のキー
-        uint16_t key_count[KEY_INPUT_MAX]; // キー別の打鍵した数
+        char *input_key_analog; // 今入力中のアナログ値
+        char *input_key; // 今入力中のキー(ステータス)
+        char *input_key_last; // 最後にチェックした入力中のキー(ステータス)
+        short *key_point; // 入力キーに該当する設定が何番目に入っているか
+        uint16_t *key_count; // キー別の打鍵した数
         uint16_t key_count_total;
         void delete_all(void); // 全てのファイルを削除
         void delete_indexof_all(String check_str); // 指定した文字から始まるファイルすべて削除
@@ -325,10 +336,13 @@ extern short col_len;
 extern short row_len;
 extern short direct_len;
 extern short touch_len;
+extern short hall_len;
 extern short *col_list;
 extern short *row_list;
 extern short *direct_list;
 extern short *touch_list;
+extern short *hall_list;
+extern short *hall_offset;
 
 extern short ioxp_sda;
 extern short ioxp_scl;
@@ -363,6 +377,9 @@ extern char webhook_buf[WEBFOOK_BUF_SIZE];
 
 // 入力キーの数
 extern int key_input_length;
+
+// キースキャンループの待ち時間
+extern short loop_delay;
 
 // キーボードの名前
 extern char keyboard_name_str[32];

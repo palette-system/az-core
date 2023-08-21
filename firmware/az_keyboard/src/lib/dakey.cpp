@@ -78,7 +78,7 @@ void Dakey::save_dakey(uint8_t view_flag) {
 		// �Ō�����������
 		fp.print(",2,");
 		// �Ō��f�[�^��URL�ɒǉ�����
-		for (i=0; i<KEY_INPUT_MAX; i++) {
+		for (i=0; i<key_input_length; i++) {
 			fp.printf("%04x", common_cls.key_count[i]);
 		}
 	}

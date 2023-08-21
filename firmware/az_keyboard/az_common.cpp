@@ -81,6 +81,9 @@ char webhook_buf[WEBFOOK_BUF_SIZE];
 // 入力キーの数
 int key_input_length;
 
+// キースキャンループの待ち時間
+short loop_delay;
+
 // キーボードの名前
 char keyboard_name_str[32];
 
@@ -128,10 +131,13 @@ short col_len;
 short row_len;
 short direct_len;
 short touch_len;
+short hall_len;
 short *col_list;
 short *row_list;
 short *direct_list;
 short *touch_list;
+short *hall_list;
+short *hall_offset;
 
 short *ioxp_list;
 short ioxp_sda;
@@ -594,6 +600,13 @@ void AzCommon::load_setting_json() {
         sprintf(keyboard_name_str, "az_keyboard");
     }
 
+    // キースキャンループの待ち時間
+    if (setting_obj.containsKey("loop_delay")) {
+        loop_delay = setting_obj["loop_delay"].as<signed int>();
+    } else {
+        loop_delay = LOOP_DELAY_DEFAULT;
+    }
+
     // HID 設定
     String hidstr;
     if (setting_obj.containsKey("vendorId")) {
@@ -644,6 +657,17 @@ void AzCommon::load_setting_json() {
     touch_list = new short[touch_len];
     for (i=0; i<touch_len; i++) {
         touch_list[i] = setting_obj["keyboard_pin"]["touch"][i].as<signed int>();
+    }
+
+    // 磁気スイッチ入力ピン情報取得
+    if (setting_obj["keyboard_pin"].containsKey("hall")) {
+        hall_len = setting_obj["keyboard_pin"]["hall"].size();
+        hall_list = new short[hall_len];
+        for (i=0; i<hall_len; i++) {
+            hall_list[i] = setting_obj["keyboard_pin"]["hall"][i].as<signed int>();
+        }
+    } else {
+        hall_len = 0;
     }
 
     // 動作電圧チェック用ピン
@@ -1020,8 +1044,21 @@ void AzCommon::get_keymap(JsonObject setting_obj) {
             // Serial.printf("get_keymap: %S %S [ %D %D ]\n", lkey, kkey, lnum, knum);
             // Serial.printf("mem: %D %D\n", heap_caps_get_free_size(MALLOC_CAP_32BIT), heap_caps_get_free_size(MALLOC_CAP_8BIT) );
             press_obj = setting_obj["layers"][lkey]["keys"][kkey]["press"].as<JsonObject>();
-            setting_press[i].layer = lnum;
-            setting_press[i].key_num = knum;
+            setting_press[i].layer = lnum; // 対象レイヤー
+            setting_press[i].key_num = knum; // 対象キーID
+            // アクチュエーションポイント
+            if (press_obj.containsKey("acp")) {
+                setting_press[i].actuation_point = press_obj["acp"].as<signed int>();
+            } else {
+                setting_press[i].actuation_point = ACTUATION_POINT_DEFAULT;
+            }
+            // ラピットトリガー
+            if (press_obj.containsKey("rap")) {
+                setting_press[i].rapid_trigger = press_obj["rap"].as<signed int>();
+            } else {
+                setting_press[i].rapid_trigger = RAPID_TRIGGER_DEFAULT;
+            }
+            // ボタンの動作
             setting_press[i].action_type = press_obj["action_type"].as<signed int>();
             if (setting_press[i].action_type == 1) {
                 // 通常入力
@@ -1030,11 +1067,13 @@ void AzCommon::get_keymap(JsonObject setting_obj) {
                 for (j=0; j<normal_input.key_length; j++) {
                       normal_input.key[j] = press_obj["key"][j].as<signed int>();
                 }
+                // 連打設定
                 if (press_obj.containsKey("repeat_interval")) {
                     normal_input.repeat_interval = press_obj["repeat_interval"].as<signed int>();
                 } else {
                     normal_input.repeat_interval = 51;
                 }
+                // ホールド設定
                 if (press_obj.containsKey("hold")) {
                     normal_input.hold = press_obj["hold"].as<signed int>();
                 } else {
@@ -1287,7 +1326,8 @@ int AzCommon::i2c_setup(int p, i2c_option *opt) {
 // キーの入力ピンの初期化
 void AzCommon::pin_setup() {
     // output ピン設定 (colで定義されているピンを全てoutputにする)
-    int i, j, m, x;
+    int c, i, j, m, x;
+    int offset_buf[10][hall_len];
 
     for (i=0; i<col_len; i++) {
         if (!AZ_DEBUG_MODE || (col_list[i] != 1 && col_list[i] != 3)) pinMode(col_list[i], OUTPUT_OPEN_DRAIN);
@@ -1300,9 +1340,32 @@ void AzCommon::pin_setup() {
     for (i=0; i<direct_len; i++) {
         pinMode(direct_list[i], INPUT_PULLUP);
     }
+    // 磁気スイッチピンは全てinputにする
+    for (i=0; i<hall_len; i++) {
+        pinMode(hall_list[i], INPUT);
+    }
+    // 磁気スイッチの現在の高さを初期位置にする
+    if (hall_len) {
+        hall_offset = new short[hall_len];
+        // 全ピン時間を空けながら10回アナログ値を取得
+        for (c=0; c<10; c++) {
+            for (i=0; i<hall_len; i++) {
+                offset_buf[c][i] = analogRead(hall_list[i]);
+            }
+            delay(10);
+        }
+        // 10回の平均をオフセットに設定
+        for (i=0; i<hall_len; i++) {
+            x = 0;
+            for (c=0; c<10; c++) {
+                x += offset_buf[c][i];
+            }
+            hall_offset[i] = x / 10;
+        }
+    }
 
     // キー数の計算
-    key_input_length = (col_len * row_len) + direct_len + touch_len;
+    key_input_length = (col_len * row_len) + direct_len + touch_len + hall_len;
 
     // I2C初期化
     if (ioxp_sda >= 0 && ioxp_scl >= 0) {
@@ -1329,35 +1392,22 @@ void AzCommon::pin_setup() {
 
     // 動作電圧チェック用ピン
     // power_read_pin = 36;
-    if (power_read_pin >= 0) { // 電圧を読み込むピン
-        this->pinmode_analog(power_read_pin);
-    }
 
-    if (key_input_length > KEY_INPUT_MAX) key_input_length = KEY_INPUT_MAX;
+    input_key = new char[key_input_length];
+    input_key_analog = new char[key_input_length];
+    input_key_last = new char[key_input_length];
+    key_count = new uint16_t[key_input_length];
+    key_point = new short[key_input_length];
     ESP_LOGD(LOG_TAG, "key length : %D\r\n", key_input_length);
-    // 打鍵数リセット
-    for (i=0; i<KEY_INPUT_MAX; i++) {
-        this->key_count[i] = 0;
+    // リセット
+    for (i=0; i<key_input_length; i++) {
+        this->input_key[i] = 0; // 今回のキースキャンデータ
+        this->input_key_analog[i] = 0; // アナログ入力値
+        this->input_key_last[i] = 0; // 前回のキースキャンデータ
+        this->key_count[i] = 0; // 打鍵数
+        this->key_point[i] = -1; // キーごとの設定ID
     }
     this->key_count_total = 0;
-}
-
-
-
-// アナログ入力ピン初期化(ESP32)
-void AzCommon::pinmode_analog(int gpio_no) {
-}
-
-// アナログピンの入力を取得(ESP32)
-int AzCommon::analog_read(int gpio_no) {
-    return -1;
-}
-
-
-// 電源電圧を取得
-int AzCommon::get_power_vol() {
-    // 電圧を読み込む
-    return this->analog_read(power_read_pin);
 }
 
 // レイヤーが存在するか確認
@@ -1369,16 +1419,39 @@ bool AzCommon::layers_exists(int layer_no) {
     return false;
 }
 
+// 指定したレイヤーを選択する
+void AzCommon::layer_set(int layer_no) {
+    int i;
+    select_layer_no = layer_no;
+    // 設定リストをリセット
+    for (i=0; i<key_input_length; i++) {
+        key_point[i] = -1;
+    }
+    // 現在のレイヤーの各キーの設定IDを取得
+    for (i=0; i<setting_length; i++) {
+        if (setting_press[i].layer == select_layer_no) {
+            key_point[setting_press[i].key_num] = i;
+        }
+    }
+
+}
+
 // 指定したキーの入力設定オブジェクトを取得する
 setting_key_press AzCommon::get_key_setting(int layer_id, int key_num) {
     int i;
-    for (i=0; i<setting_length; i++) {
-        if (setting_press[i].layer == layer_id && setting_press[i].key_num == key_num) return setting_press[i];
-    }
     setting_key_press r;
     r.layer = -1;
     r.key_num = -1;
     r.action_type = -1;
+    // 現在のレイヤーであれば key_point に入れてあった設定を返す
+    if (select_layer_no == layer_id) {
+        if (key_point[key_num] < 0) return r;
+        return setting_press[key_point[key_num]];
+    }
+    // 現在のレイヤーでなければキー設定から指定されたキーを探す
+    for (i=0; i<setting_length; i++) {
+        if (setting_press[i].layer == layer_id && setting_press[i].key_num == key_num) return setting_press[i];
+    }
     return r;
 }
 
@@ -1499,6 +1572,10 @@ void AzCommon::change_mode(int set_mode) {
     ESP.restart(); // ESP32再起動
 }
 
+// 指定したキーの入力ステータス取得
+int AzCommon::get_key_status(int key_num) {
+
+}
 
 int AzCommon::i2c_read(int p, i2c_option *opt, char *read_data) {
     int e, i, j, k, m, n, r, x, y;
@@ -1640,10 +1717,10 @@ int AzCommon::i2c_read(int p, i2c_option *opt, char *read_data) {
     return r;
 }
 
-
 // 現在のキーの入力状態を取得
 void AzCommon::key_read(void) {
     int i, j, n, s;
+    setting_key_press *k;
     n = 0;
     // ダイレクト入力の取得
     for (i=0; i<direct_len; i++) {
@@ -1665,6 +1742,33 @@ void AzCommon::key_read(void) {
         input_key[n] = 0;
 
 #endif
+        n++;
+    }
+    // 磁気スイッチの取得
+    for (i=0; i<hall_len; i++) {
+        k = &setting_press[key_point[n]]; // キーの設定取得
+        input_key_analog[n] = map(analogRead(hall_list[i]), hall_offset[i] - 50, hall_offset[i] + 1200, 0, 255);
+        if (input_key_last[n] == 0) { // 前回が未入力
+            if (input_key_analog[n] > k->actuation_point) { // アクチュエーションポイントを超えたらON
+                input_key[n] = 1;
+            } else {
+                input_key[n] = 0;
+            }
+        } else if (input_key_last[n] == 1) { // 前回が入力
+            if (input_key_analog[n] < k->rapid_trigger) { // ラピットトリガーを下回ったらOFF
+                input_key[n] = 2;
+            } else {
+                input_key[n] = 1; // ラピットトリガーを下回るまではONのまま
+            }
+        } else if (input_key_last[n] == 2) { // 前回がラピットトリガーOFFしてリセット待ち
+            if (input_key_analog[n] < (hall_offset[i] + 10)) { // デフォルトの値を下回ったらリセット
+                input_key[n] = 0;
+            } else {
+                input_key[n] = 2; // リセットするまではリセット待ちのまま
+            }
+        } else {
+            input_key[n] = 0;
+        }
         n++;
     }
     // マトリックス入力の取得

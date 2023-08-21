@@ -281,7 +281,7 @@ void HidrawCallbackExec(int data_length) {
 					for (i=2; i<data_length; i++) remap_buf[i] = 0x00;
 					m = 2;
 					for (i=0; i<key_input_length; i++) {
-						remap_buf[m] |= common_cls.input_key[i] << (i % 8);
+						remap_buf[m] |= (common_cls.input_key[i])? 1: 0 << (i % 8);
 						if ((i %8) == 7) m++;
 					}
 					remap_input_test = 50;
@@ -882,6 +882,22 @@ void HidrawCallbackExec(int data_length) {
 			send_buf[1] = m; // 読み込みに行くアドレス
 			send_buf[2] = wirelib_cls.write(m, &remap_buf[3], l); // 書込み
 			for (i=2; i<32; i++) send_buf[i] = 0x00;
+			return;
+		}
+		case id_get_analog_switch: {
+			// アナログスイッチの情報を取得
+			setting_key_press *kp;
+			kp = &setting_press[common_cls.key_point[0]]; // キーの設定取得
+			send_buf[0] = id_get_analog_switch;
+			send_buf[1] = hall_list[0];
+			send_buf[2] = (hall_offset[0] >> 8) & 0xFF;
+			send_buf[3] = hall_offset[0] & 0xFF;
+			send_buf[4] = common_cls.input_key_analog[0];
+			send_buf[5] = common_cls.input_key[0];
+			send_buf[6] = kp->actuation_point;
+			send_buf[7] = kp->rapid_trigger;
+			send_buf[8] = common_cls.key_point[0];
+			for (i=9; i<32; i++) send_buf[i] = 0x00;
 			return;
 		}
 		case id_get_firmware_status: {

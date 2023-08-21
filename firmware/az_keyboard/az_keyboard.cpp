@@ -48,6 +48,9 @@ void AzKeyboard::start_keyboard() {
     // ステータスLED点灯
     status_led_mode = 1;
 
+    // レイヤーをデフォルトに
+    common_cls.layer_set(default_layer_no);
+
     // キーの入力状態初期化
     common_cls.key_read();
     common_cls.key_old_copy();
@@ -85,7 +88,7 @@ void AzKeyboard::key_action_exec() {
     int i;
     for (i=0; i<key_input_length; i++) {
         if (common_cls.input_key_last[i] != common_cls.input_key[i]) {
-            if (common_cls.input_key[i]) {
+            if (common_cls.input_key[i] == 1) {
                 // キーが押された
                 key_down_action(i); // 押された時の動作
                 rgb_led_cls.set_led_buf(i, 1); // LED に押したよを送る
@@ -269,7 +272,7 @@ void AzKeyboard::hold_press(int hold, int key_num) {
         if (hold & 0x04) bleKeyboard.press_raw(0xE6); // 右Ctrl
         if (hold & 0x08) bleKeyboard.press_raw(0xE7); // 右Ctrl
     } else if (k == 0x04) { // レイヤー
-        select_layer_no = hold & 0x0F;
+        common_cls.layer_set(hold & 0x0F);
         last_select_layer_key = key_num; // 最後に押されたレイヤーボタン設定
     }
 }
@@ -343,7 +346,7 @@ void AzKeyboard::key_down_action(int key_num) {
         memcpy(&layer_move_input, key_set.data, sizeof(setting_layer_move));
         // Serial.printf("dw: %d %d %02x %d\n", select_layer_no, key_num, layer_move_input.layer_type, layer_move_input.layer_id);
         m = select_layer_no; // 元のレイヤー番号保持
-        select_layer_no = layer_move_input.layer_id; // レイヤー切り替え
+        common_cls.layer_set(layer_move_input.layer_id);
         last_select_layer_key = key_num; // 最後に押されたレイヤーボタン設定
         if (layer_move_input.layer_type == 0x50 || layer_move_input.layer_type == 0x52) {
             // TO、DF はデフォルトレイヤーも切り替える
@@ -452,7 +455,7 @@ void AzKeyboard::key_up_action(int key_num) {
             if (layer_move_input.layer_type == 0x51 || layer_move_input.layer_type == 0x58) {
                 // MO(押している間)で最後に押されたレイヤーボタンならばレイヤーをデフォルトに戻す
                 if (last_select_layer_key == key_num) {
-                    select_layer_no = default_layer_no;
+                    common_cls.layer_set(default_layer_no);
                     last_select_layer_key = -1;
                 }
             }
@@ -484,7 +487,7 @@ void AzKeyboard::key_up_action(int key_num) {
                 } else if (k == 0x04) { // レイヤー
                     // 最後に押されたレイヤーボタンだったらデフォルトに戻す
                     if (last_select_layer_key == key_num) {
-                        select_layer_no = default_layer_no;
+                        common_cls.layer_set(default_layer_no);
                         last_select_layer_key = -1;
                     }
                 }
@@ -537,7 +540,7 @@ void AzKeyboard::tap_key_disable_all() {
 // 押されているキーの情報を全てリセットする
 void AzKeyboard::press_data_reset() {
     int i;
-    select_layer_no = default_layer_no;
+    common_cls.layer_set(default_layer_no);
     last_select_layer_key = -1;
     for (i=0; i<PRESS_KEY_MAX; i++) {
         press_key_list[i].action_type = -1;
@@ -633,7 +636,9 @@ void AzKeyboard::press_data_clear() {
 
 // 定期実行の処理
 void AzKeyboard::loop_exec(void) {
-  while (true) {
+
+    // 現在のキーの状態を前回部分にコピー
+    common_cls.key_old_copy();
 
     // 現在のキーの状態を取得
     common_cls.key_read();
@@ -659,9 +664,6 @@ void AzKeyboard::loop_exec(void) {
     // RGB_LEDを制御する定期処理
     rgb_led_cls.rgb_led_loop_exec();
 
-    // 現在のキーの状態を前回部分にコピー
-    common_cls.key_old_copy();
-
     // 省電力モード用ループ処理
     power_saving_loop();
 
@@ -679,19 +681,6 @@ void AzKeyboard::loop_exec(void) {
         delay(5);
     }
 
-    delay(5);
-    /*
-    while (true) {
-      bleKeyboard.mouse_move(1, 0, 0, 0);
-      delay(20000);
-    }
-    char instr[64];
-    while (true) {
-        sprintf(instr, "%d %d\n", common_cls.get_power_vol(), millis() );
-        send_string(instr);
-        delay(20000);
-    }
-    */
+    delay(loop_delay);
 
-  }
 }
