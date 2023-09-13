@@ -662,9 +662,13 @@ void AzCommon::load_setting_json() {
     // 磁気スイッチ入力ピン情報取得
     if (setting_obj["keyboard_pin"].containsKey("hall")) {
         hall_len = setting_obj["keyboard_pin"]["hall"].size();
-        hall_list = new short[hall_len];
+        hall_list = new short[hall_len]; // ホールセンサーにつながっているピン
+        input_key_analog = new char[hall_len]; // 現在のアナログ値
+        analog_stroke_most = new char[hall_len]; // キーを最も押し込んだ時のアナログ値
         for (i=0; i<hall_len; i++) {
             hall_list[i] = setting_obj["keyboard_pin"]["hall"][i].as<signed int>();
+            input_key_analog[i] = 0;
+            analog_stroke_most[i] = 0;
         }
     } else {
         hall_len = 0;
@@ -1002,6 +1006,9 @@ void AzCommon::clear_keymap() {
             delete setting_press[i].data;
         } else if (setting_press[i].action_type == 8) { // 打鍵設定ボタン
             delete setting_press[i].data;
+        } else if (setting_press[i].action_type == 9) { // holdボタン
+        } else if (setting_press[i].action_type == 10) { // アナログマウス移動
+            delete setting_press[i].data;
         }
     }
     delete[] setting_press;
@@ -1046,6 +1053,12 @@ void AzCommon::get_keymap(JsonObject setting_obj) {
             press_obj = setting_obj["layers"][lkey]["keys"][kkey]["press"].as<JsonObject>();
             setting_press[i].layer = lnum; // 対象レイヤー
             setting_press[i].key_num = knum; // 対象キーID
+            // アクチュエーションポイント
+            if (press_obj.containsKey("act")) {
+                setting_press[i].actuation_type = press_obj["act"].as<signed int>();
+            } else {
+                setting_press[i].actuation_type = ACTUATION_TYPE_DEFAULT;
+            }
             // アクチュエーションポイント
             if (press_obj.containsKey("acp")) {
                 setting_press[i].actuation_point = press_obj["acp"].as<signed int>();
@@ -1102,8 +1115,8 @@ void AzCommon::get_keymap(JsonObject setting_obj) {
                 setting_press[i].data = new char[m];
                 text_str.toCharArray(setting_press[i].data, m);
                 
-            } else if (setting_press[i].action_type == 5) {
-                // マウス移動
+            } else if (setting_press[i].action_type == 5 || setting_press[i].action_type == 10) {
+                // 5.マウス移動 10.アナログマウス移動
                 mouse_move_input.x = press_obj["move"]["x"].as<signed int>();
                 mouse_move_input.y = press_obj["move"]["y"].as<signed int>();
                 mouse_move_input.wheel = press_obj["move"]["wheel"].as<signed int>();
@@ -1129,29 +1142,6 @@ void AzCommon::get_keymap(JsonObject setting_obj) {
             i++;
         }
     }
-  
-    // ログに出力して確認
-    for (i=0; i<setting_length; i++) {
-        if (setting_press[i].action_type == 1) {
-            memcpy(&normal_input, setting_press[i].data, sizeof(setting_normal_input));
-            ESP_LOGD(LOG_TAG, "setting_press %D %D %D %D [%D, %D]", i, setting_press[i].layer, setting_press[i].key_num, setting_press[i].action_type, normal_input.key_length, normal_input.repeat_interval);
-            for (j=0; j<normal_input.key_length; j++) {
-                ESP_LOGD(LOG_TAG, "setting_press %D ", normal_input.key[j]);
-            }
-        } else if (setting_press[i].action_type == 2) {
-            ESP_LOGD(LOG_TAG, "setting_press %D %D %D %D [ %S ]\n", i, setting_press[i].layer, setting_press[i].key_num, setting_press[i].action_type, setting_press[i].data);
-        } else if (setting_press[i].action_type == 3) {
-            ESP_LOGD(LOG_TAG, "setting_press %D %D %D %D [ %D ]\n", i, setting_press[i].layer, setting_press[i].key_num, setting_press[i].action_type, *setting_press[i].data);
-        } else if (setting_press[i].action_type == 4) {
-            ESP_LOGD(LOG_TAG, "setting_press %D %D %D %D [ %S ]\n", i, setting_press[i].layer, setting_press[i].key_num, setting_press[i].action_type, setting_press[i].data);
-        } else if (setting_press[i].action_type == 5) {
-            memcpy(&mouse_move_input, setting_press[i].data, sizeof(setting_mouse_move));
-            ESP_LOGD(LOG_TAG, "setting_press %D %D %D %D [ %D, %D, %D ]\n", i, setting_press[i].layer, setting_press[i].key_num, setting_press[i].action_type, mouse_move_input.x, mouse_move_input.y, mouse_move_input.speed);
-        } else {
-            ESP_LOGD(LOG_TAG, "setting_press %D %D %D %D\n", i, setting_press[i].layer, setting_press[i].key_num, setting_press[i].action_type);
-        }
-    }
-    ESP_LOGD(LOG_TAG, "mmm: %D %D\n", heap_caps_get_free_size(MALLOC_CAP_32BIT), heap_caps_get_free_size(MALLOC_CAP_8BIT) );
 
 }
 
@@ -1394,7 +1384,6 @@ void AzCommon::pin_setup() {
     // power_read_pin = 36;
 
     input_key = new char[key_input_length];
-    input_key_analog = new char[key_input_length];
     input_key_last = new char[key_input_length];
     key_count = new uint16_t[key_input_length];
     key_point = new short[key_input_length];
@@ -1402,7 +1391,6 @@ void AzCommon::pin_setup() {
     // リセット
     for (i=0; i<key_input_length; i++) {
         this->input_key[i] = 0; // 今回のキースキャンデータ
-        this->input_key_analog[i] = 0; // アナログ入力値
         this->input_key_last[i] = 0; // 前回のキースキャンデータ
         this->key_count[i] = 0; // 打鍵数
         this->key_point[i] = -1; // キーごとの設定ID
@@ -1443,6 +1431,9 @@ setting_key_press AzCommon::get_key_setting(int layer_id, int key_num) {
     r.layer = -1;
     r.key_num = -1;
     r.action_type = -1;
+    r.actuation_type = ACTUATION_TYPE_DEFAULT;
+    r.actuation_point = ACTUATION_POINT_DEFAULT;
+    r.rapid_trigger = RAPID_TRIGGER_DEFAULT;
     // 現在のレイヤーであれば key_point に入れてあった設定を返す
     if (select_layer_no == layer_id) {
         if (key_point[key_num] < 0) return r;
@@ -1665,9 +1656,9 @@ int AzCommon::i2c_read(int p, i2c_option *opt, char *read_data) {
                 if (mouse_scroll_flag) {
                     m = (y == 0)? 0: (y > 0)? 1: -1;
                     n = (x == 0)? 0: (x > 0)? 1: -1;
-                    press_mouse_list_push(0x2000, 0, 0, m, n, 100);
+                    press_mouse_list_push(0x2000, 5, 0, 0, m, n, 100);
                 } else {
-                    press_mouse_list_push(0x2000, x, y, 0, 0, i2cpim447_obj.speed);
+                    press_mouse_list_push(0x2000, 5, x, y, 0, 0, i2cpim447_obj.speed);
                 }
             } else if (opt->opt_type == 4) {
                 // フリック入力
@@ -1719,7 +1710,8 @@ int AzCommon::i2c_read(int p, i2c_option *opt, char *read_data) {
 
 // 現在のキーの入力状態を取得
 void AzCommon::key_read(void) {
-    int i, j, n, s;
+    int a, i, j, n, s;
+    int act, acp, acpt, rap;
     setting_key_press *k;
     n = 0;
     // ダイレクト入力の取得
@@ -1746,29 +1738,154 @@ void AzCommon::key_read(void) {
     }
     // 磁気スイッチの取得
     for (i=0; i<hall_len; i++) {
-        k = &setting_press[key_point[n]]; // キーの設定取得
-        input_key_analog[n] = map(analogRead(hall_list[i]), hall_offset[i] - 50, hall_offset[i] + 1200, 0, 255);
+        // 設定からアクチュエーションポイント、ラピットトリガー取得
+        if (key_point[n] >= 0) {
+            k = &setting_press[key_point[n]]; // キーの設定取得
+            act = k->action_type;
+            acpt = k->actuation_type;
+            acp = k->actuation_point;
+            rap = k->rapid_trigger;
+        } else {
+            // 設定がなければデフォルト値
+            act = 0;
+            acpt = ACTUATION_TYPE_DEFAULT;
+            acp = ACTUATION_POINT_DEFAULT;
+            rap = RAPID_TRIGGER_DEFAULT;
+        }
+        // 現在のアナログ値取得
+        a = analogRead(hall_list[i]);
+        input_key_analog[i] = map(a, hall_offset[i] - 50, hall_offset[i] + 1200, 0, 255);
+        if (acpt == 0) {
+            // 静的なアクチュエーションポイントとラピットトリガー
+            // 固定位置で判定
+            if (input_key_analog[i] > acp) { // アクチュエーションポイントを超えたらON
+                input_key[n] = 1;
+            } else if (input_key_analog[i] < rap) { // ラピットトリガーを下回ったらOFF
+                input_key[n] = 0;
+            } else { // 中間地点にいる場合は前のステータスを引き継ぐ
+                input_key[n] = input_key_last[n];
+            }
+
+        } else if (acpt == 1) {
+            // 動的なアクチュエーションポイントとラピットトリガー
+            // (移動距離で判定)
+            if (input_key_last[n] == 0) { // 前回が未入力
+                if (input_key_analog[i] > (analog_stroke_most[i] + acp) || input_key_analog[i] > 240) {
+                    // アクチュエーションポイントを超えたらON
+                    input_key[n] = 1;
+                    analog_stroke_most[i] = input_key_analog[i]; // ONになった位置を保持
+                } else {
+                    input_key[n] = 0; // アクチュエーションポイント超えるまではOFFのまま
+                    // 離されたらOFFになった位置を更新する
+                    if (analog_stroke_most[i] > input_key_analog[i]) {
+                        analog_stroke_most[i] = input_key_analog[i];
+                    }
+
+                }
+            } else if (input_key_last[n] == 1) { // 前回がON
+                if (input_key_analog[i] < (analog_stroke_most[i] - rap) || input_key_analog[i] < 12) { // 最も押し込んだ位置からラピットトリガー分戻ったらリセット
+                    input_key[n] = 0;
+                    analog_stroke_most[i] = input_key_analog[i]; // OFFになった位置を保持
+                } else {
+                    input_key[n] = 1; // ラピットトリガーを下回るまではONのまま
+                    // 深く押し込まれたらONになった位置を更新する
+                    if (analog_stroke_most[i] < input_key_analog[i]) {
+                        analog_stroke_most[i] = input_key_analog[i];
+                    }
+                }
+            } else {
+                input_key[n] = 0;
+            }
+
+        } else if (acpt == 2) {
+            // 2段階入力
+            if (input_key_last[n] == 0) { // 前回が未入力
+                if (input_key_analog[i] > 180) {
+                    // 2段目まで押し込まれたら2段目にする
+                    input_key[n] = 3; // 2段目ON
+                    analog_stroke_most[i] = 0; // カウンタリセット
+
+                } else if (input_key_analog[i] > 40) {
+                    // 1段目の深さの場合
+                    analog_stroke_most[i]++; // 超えたよ数をカウントしていき、5回を超えたらONにする(素早い入力の時は1段目を飛ばすため)
+                    if (analog_stroke_most[i] > 5) {
+                        input_key[n] = 2; // 1段目ON
+                    } else {
+                        input_key[n] = 0;
+                    }
+                } else {
+                    // 浅い位置にいればカウントもリセット
+                    input_key[n] = 0;
+                    analog_stroke_most[i] = 0;
+                }
+            } else if (input_key_last[n] == 2) { // 前回が1段目ON
+                if (input_key_analog[i] > 180) {
+                    // 2段目の深さまで押し込まれた
+                    input_key[n] = 3; // 2段目ON
+                    analog_stroke_most[i] = 0; // カウンタリセット
+                } else if (input_key_analog[n] < 30) {
+                    // 浅い位置に戻った
+                    input_key[n] = 0; // OFF
+                    analog_stroke_most[i] = 0; // カウンタリセット
+                } else {
+                    input_key[n] = 2;
+                    
+                }
+                
+            } else if (input_key_last[n] == 3) { // 前回が2段目ON
+                if (input_key_analog[i] < 30) {
+                    // 浅い位置に戻った
+                    input_key[n] = 0; // OFF
+                    analog_stroke_most[i] = 0; // カウンタリセット
+
+                } else if (input_key_analog[i] < 160) {
+                    // 2段目まで戻った
+                    analog_stroke_most[i]++; // 戻ったよ数をカウントしていき、5回を超えたらONにする(素早い入力の時は1段目を飛ばすため)
+                    if (analog_stroke_most[i] > 5) {
+                        input_key[n] = 2; // 2段目ON　＋　1段目OFF
+                        analog_stroke_most[i] = 0; // カウンタリセット
+                    } else {
+                        input_key[n] = 3;
+                    }
+                } else {
+                    // 深い位置
+                    input_key[n] = 3;
+                    analog_stroke_most[i] = 0; // カウンタリセット
+                }
+            }
+
+        }
+        // if (analog_stroke_most[i] < input_key_analog[i]) analog_stroke_most[i] = input_key_analog[i];
+        /*
         if (input_key_last[n] == 0) { // 前回が未入力
-            if (input_key_analog[n] > k->actuation_point) { // アクチュエーションポイントを超えたらON
+            if (input_key_analog[i] > acp) { // アクチュエーションポイントを超えたらON
                 input_key[n] = 1;
             } else {
                 input_key[n] = 0;
             }
         } else if (input_key_last[n] == 1) { // 前回が入力
-            if (input_key_analog[n] < k->rapid_trigger) { // ラピットトリガーを下回ったらOFF
-                input_key[n] = 2;
+            if (input_key_analog[i] < rap && input_key_analog[i] < (analog_stroke_most[i] - 10)) { // ラピットトリガーを下回ったらOFF( && 最も押し込んだ所から最低-10 以上戻ったら)
+                if (act == 10) {
+                    input_key[n] = 0;
+                    analog_stroke_most[i] = 0; // 最も押し込んだ時のアナログ値
+                } else {
+                    input_key[n] = 2;
+                }
             } else {
                 input_key[n] = 1; // ラピットトリガーを下回るまではONのまま
             }
         } else if (input_key_last[n] == 2) { // 前回がラピットトリガーOFFしてリセット待ち
-            if (input_key_analog[n] < (hall_offset[i] + 10)) { // デフォルトの値を下回ったらリセット
-                input_key[n] = 0;
+            if (a < (hall_offset[i] + 10) // デフォルトの値を下回ったらリセット
+                || ( input_key_analog[i] < acp && input_key_analog[i] < (rap - 50))) { // ラピットトリガーから30下がってたらリセット(アクチュエーションポイントより深い場合はリセットしない)
+                analog_stroke_most[i] = 0; // 最も押し込んだ時のアナログ値
+                input_key[n] = 0; // 今のステータス
             } else {
                 input_key[n] = 2; // リセットするまではリセット待ちのまま
             }
         } else {
             input_key[n] = 0;
-        }
+        }*/
+
         n++;
     }
     // マトリックス入力の取得
@@ -1840,6 +1957,7 @@ void AzCommon::press_mouse_list_clean() {
     int i;
     for (i=0; i<PRESS_MOUSE_MAX; i++) {
         press_mouse_list[i].key_num = -1;
+        press_mouse_list[i].action_type = 0;
         press_mouse_list[i].move_x = 0;
         press_mouse_list[i].move_y = 0;
         press_mouse_list[i].move_speed = 0;
@@ -1849,13 +1967,14 @@ void AzCommon::press_mouse_list_clean() {
 
 
 // マウス移動リストに追加
-void AzCommon::press_mouse_list_push(int key_num, short move_x, short move_y, short move_wheel, short move_hWheel, short move_speed) {
+void AzCommon::press_mouse_list_push(int key_num, short action_type, short move_x, short move_y, short move_wheel, short move_hWheel, short move_speed) {
     int i;
     for (i=0; i<PRESS_MOUSE_MAX; i++) {
         // データが入っている or 指定されたキー番号以外は 次
         if (press_mouse_list[i].key_num >= 0 && press_mouse_list[i].key_num != key_num) continue;
         // 空いていればデータを入れる
         press_mouse_list[i].key_num = key_num;
+        press_mouse_list[i].action_type = action_type;
         press_mouse_list[i].move_x = move_x;
         press_mouse_list[i].move_y = move_y;
         press_mouse_list[i].move_wheel = move_wheel * -1;
@@ -1875,6 +1994,7 @@ void AzCommon::press_mouse_list_remove(int key_num) {
         if (press_mouse_list[i].key_num != key_num) continue;
         // 該当のキーのデータ削除
         press_mouse_list[i].key_num = -1;
+        press_mouse_list[i].action_type = 0;
         press_mouse_list[i].move_x = 0;
         press_mouse_list[i].move_y = 0;
         press_mouse_list[i].move_speed = 0;

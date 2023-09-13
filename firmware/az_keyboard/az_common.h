@@ -83,6 +83,9 @@
 // デバッグモード 0=OFF / 1=ON
 #define  AZ_DEBUG_MODE 0
 
+// アクチュエーションタイプデフォルト
+#define  ACTUATION_TYPE_DEFAULT  0
+
 // アクチュエーションポイントデフォルト
 #define  ACTUATION_POINT_DEFAULT  120
 
@@ -107,6 +110,7 @@ struct press_key_data {
 // 今押されているマウスボタン情報
 struct press_mouse_data {
     short key_num; // キー番号
+    short action_type; // 動作のタイプ(5=マウス移動 / 10=アナログマウス移動)
     short move_x; // X座標
     short move_y; // Y座標
     short move_wheel; // 縦ホイール
@@ -150,6 +154,7 @@ struct setting_layer_move {
 struct setting_key_press {
     short layer; // どのレイヤーか
     short key_num; // どのキーか
+    uint8_t actuation_type; // アクチュエーションタイプ
     uint8_t actuation_point; // アクチュエーションポイント
     uint8_t rapid_trigger; // ラピットトリガー
     short action_type; // 入力するタイプ
@@ -282,6 +287,7 @@ class AzCommon
         void key_read(); // 現在のキーの状態を取得
         void key_old_copy(); // 現在のキーの状態を過去用配列にコピー
         char *input_key_analog; // 今入力中のアナログ値
+        char *analog_stroke_most; // 最も押し込んだ時のアナログ値
         char *input_key; // 今入力中のキー(ステータス)
         char *input_key_last; // 最後にチェックした入力中のキー(ステータス)
         short *key_point; // 入力キーに該当する設定が何番目に入っているか
@@ -292,7 +298,7 @@ class AzCommon
         int spiffs_total(void); // ファイル領域合計サイズを取得
         int spiffs_used(void); // 使用しているファイル領域サイズを取得
         void press_mouse_list_clean(); // マウス移動中リストを空にする
-        void press_mouse_list_push(int key_num, short move_x, short move_y, short move_wheel, short move_hWheel, short move_speed); // マウス移動中リストに追加
+        void press_mouse_list_push(int key_num, short action_type, short move_x, short move_y, short move_wheel, short move_hWheel, short move_speed); // マウス移動中リストに追加
         void press_mouse_list_remove(int key_num); // マウス移動中リストから削除
     
     private:

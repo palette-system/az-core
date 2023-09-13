@@ -886,18 +886,48 @@ void HidrawCallbackExec(int data_length) {
 		}
 		case id_get_analog_switch: {
 			// アナログスイッチの情報を取得
+		    m = remap_buf[1]; // 読み込みに行くアナログスイッチのID
+			l = m - direct_len - touch_len;
 			setting_key_press *kp;
-			kp = &setting_press[common_cls.key_point[0]]; // キーの設定取得
+			if (common_cls.key_point[m] >= 0) {
+				kp = &setting_press[common_cls.key_point[m]]; // キーの設定取得
+				send_buf[3] = kp->actuation_type;
+				send_buf[4] = kp->actuation_point;
+				send_buf[5] = kp->rapid_trigger;
+			} else {
+				send_buf[3] = ACTUATION_TYPE_DEFAULT;
+				send_buf[4] = ACTUATION_POINT_DEFAULT;
+				send_buf[5] = RAPID_TRIGGER_DEFAULT;
+			}
 			send_buf[0] = id_get_analog_switch;
-			send_buf[1] = hall_list[0];
-			send_buf[2] = (hall_offset[0] >> 8) & 0xFF;
-			send_buf[3] = hall_offset[0] & 0xFF;
-			send_buf[4] = common_cls.input_key_analog[0];
-			send_buf[5] = common_cls.input_key[0];
-			send_buf[6] = kp->actuation_point;
-			send_buf[7] = kp->rapid_trigger;
-			send_buf[8] = common_cls.key_point[0];
-			for (i=9; i<32; i++) send_buf[i] = 0x00;
+			send_buf[1] = common_cls.key_point[m];
+			send_buf[2] = hall_list[l];
+			send_buf[6] = (hall_offset[l] >> 8) & 0xFF;
+			send_buf[7] = hall_offset[l] & 0xFF;
+			send_buf[8] = common_cls.input_key_analog[l];
+			send_buf[9] = common_cls.analog_stroke_most[l];
+			send_buf[10] = common_cls.input_key[m];
+			for (i=11; i<32; i++) send_buf[i] = 0x00;
+			return;
+		}
+		case id_set_analog_switch: {
+			// アナログスイッチの設定を変更
+		    m = remap_buf[1]; // 変更するアナログスイッチのID
+			p = remap_buf[2]; // ラピットトリガーのタイプ
+			x = remap_buf[3]; // 設定するアクチュエーションポイント
+			s = remap_buf[4]; // 設定するラピットトリガー
+			setting_key_press *kp;
+			if (common_cls.key_point[m] >= 0) {
+				kp = &setting_press[common_cls.key_point[m]]; // キーの設定取得
+				kp->actuation_type = p;
+				kp->actuation_point = x;
+				kp->rapid_trigger = s;
+				send_buf[1] = 0;
+			} else {
+				send_buf[1] = 1;
+			}
+			send_buf[0] = id_set_analog_switch;
+			for (i=2; i<32; i++) send_buf[i] = 0x00;
 			return;
 		}
 		case id_get_firmware_status: {

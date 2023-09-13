@@ -178,25 +178,38 @@ void AzKeyboard::press_key_list_push(int action_type, int key_num, int key_id, i
 
 // マウス移動処理
 void AzKeyboard::move_mouse_loop() {
-    int i;
+    int a, i, k;
     int mx, my;
     int wx, wy;
     for (i=0; i<PRESS_MOUSE_MAX; i++) {
         // 入力無しならば何もしない
         if (press_mouse_list[i].key_num < 0) continue;
-        if (press_mouse_list[i].move_speed == 0 && press_mouse_list[i].move_index == 0) {
-            // スピード0なら最初の1回だけ移動
-            bleKeyboard.mouse_move(
-                press_mouse_list[i].move_x,
-                press_mouse_list[i].move_y,
-                press_mouse_list[i].move_wheel,
-                press_mouse_list[i].move_hWheel);
-        } else {
-            // スピードで割った分だけ移動
-            mx = ((press_mouse_list[i].move_x * press_mouse_list[i].move_speed) / 100);
-            my = ((press_mouse_list[i].move_y * press_mouse_list[i].move_speed) / 100);
-            wx = ((press_mouse_list[i].move_wheel * press_mouse_list[i].move_speed) / 100);
-            wy = ((press_mouse_list[i].move_hWheel * press_mouse_list[i].move_speed) / 100);
+        if (press_mouse_list[i].action_type == 5) { // 5.マウス移動
+            if (press_mouse_list[i].move_speed == 0 && press_mouse_list[i].move_index == 0) {
+                // スピード0なら最初の1回だけ移動
+                bleKeyboard.mouse_move(
+                    press_mouse_list[i].move_x,
+                    press_mouse_list[i].move_y,
+                    press_mouse_list[i].move_wheel,
+                    press_mouse_list[i].move_hWheel);
+            } else {
+                // スピードで割った分だけ移動
+                mx = ((press_mouse_list[i].move_x * press_mouse_list[i].move_speed) / 100);
+                my = ((press_mouse_list[i].move_y * press_mouse_list[i].move_speed) / 100);
+                wx = ((press_mouse_list[i].move_wheel * press_mouse_list[i].move_speed) / 100);
+                wy = ((press_mouse_list[i].move_hWheel * press_mouse_list[i].move_speed) / 100);
+                bleKeyboard.mouse_move(mx, my, wx, wy);
+                delay(5);
+            }
+
+        } else if (press_mouse_list[i].action_type == 10) { // 10.アナログマウス移動
+            // 磁気スイッチの押された分だけ移動
+            k = press_mouse_list[i].key_num - direct_len - touch_len; // hall キーのID
+            a = common_cls.input_key_analog[k]; // キーの現在のアナログ値(0 - 255)
+            mx = press_mouse_list[i].move_x * a / 50;
+            my = press_mouse_list[i].move_y * a / 50;
+            wx = press_mouse_list[i].move_wheel * a / 100;
+            wy = press_mouse_list[i].move_hWheel * a / 100;
             bleKeyboard.mouse_move(mx, my, wx, wy);
             delay(5);
         }
@@ -360,11 +373,12 @@ void AzKeyboard::key_down_action(int key_num) {
         // webフック
         send_webhook(key_set.data);
         
-    } else if (action_type == 5) {
-        // マウス移動
+    } else if (action_type == 5 || action_type == 10) {
+        // 5.マウス移動  10.アナログマウス移動
         setting_mouse_move mouse_move_input;
         memcpy(&mouse_move_input, key_set.data, sizeof(setting_mouse_move));
         common_cls.press_mouse_list_push(key_num,
+            action_type,
             mouse_move_input.x,
             mouse_move_input.y,
             mouse_move_input.wheel,
@@ -414,6 +428,7 @@ void AzKeyboard::key_down_action(int key_num) {
             // 打鍵数をファイルに保存
             dakeycls.save_dakey(1);
         }
+
     }
 
 }
@@ -459,8 +474,8 @@ void AzKeyboard::key_up_action(int key_num) {
                     last_select_layer_key = -1;
                 }
             }
-        } else if (action_type == 5) {
-            // マウス移動ボタン
+        } else if (action_type == 5 || action_type == 10) {
+            // 5.マウス移動ボタン 10.アナログマウス移動
             common_cls.press_mouse_list_remove(key_num); // 移動中リストから削除
         } else if (action_type == 6) {
             // 暗記ボタン
@@ -636,6 +651,8 @@ void AzKeyboard::press_data_clear() {
 
 // 定期実行の処理
 void AzKeyboard::loop_exec(void) {
+    while (true) {
+
 
     // 現在のキーの状態を前回部分にコピー
     common_cls.key_old_copy();
@@ -681,6 +698,7 @@ void AzKeyboard::loop_exec(void) {
         delay(5);
     }
 
-    delay(loop_delay);
+    delay(5);
+    }
 
 }
