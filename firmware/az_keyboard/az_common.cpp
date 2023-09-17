@@ -1919,12 +1919,7 @@ void AzCommon::key_old_copy(void) {
 
 // 全てのファイルを削除
 void AzCommon::delete_all(void) {
-    File dirp = SPIFFS.open("/");
-    File filep = dirp.openNextFile();
-    while(filep){
-        SPIFFS.remove(filep.name());
-        filep = dirp.openNextFile();
-    }
+    SPIFFS.format();
 }
 
 // 指定した文字から始まるファイルすべて削除
