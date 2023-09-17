@@ -1031,18 +1031,13 @@ void AzCommon::clear_keymap() {
 
 // JSONデータからキーマップの情報を読み込む
 void AzCommon::get_keymap(JsonObject setting_obj) {
-    int i, j, k, m, at, s;
+    int i;
     char lkey[16];
     char kkey[16];
     uint16_t lnum, knum;
     JsonObject::iterator it_l;
     JsonObject::iterator it_k;
-    JsonObject layers, keys;
-    JsonObject press_obj;
-    String text_str;
-    setting_normal_input normal_input;
-    setting_layer_move layer_move_input;
-    setting_mouse_move mouse_move_input;
+    JsonObject layers, keys, press_json;
     // まずはキー設定されている数を取得
     layers = setting_obj["layers"].as<JsonObject>();
     setting_length = 0;
@@ -1065,101 +1060,111 @@ void AzCommon::get_keymap(JsonObject setting_obj) {
             knum = split_num(kkey);
             // Serial.printf("get_keymap: %S %S [ %D %D ]\n", lkey, kkey, lnum, knum);
             // Serial.printf("mem: %D %D\n", heap_caps_get_free_size(MALLOC_CAP_32BIT), heap_caps_get_free_size(MALLOC_CAP_8BIT) );
-            press_obj = setting_obj["layers"][lkey]["keys"][kkey]["press"].as<JsonObject>();
-            setting_press[i].layer = lnum; // 対象レイヤー
-            setting_press[i].key_num = knum; // 対象キーID
-            // アクチュエーションポイント
-            if (press_obj.containsKey("act")) {
-                setting_press[i].actuation_type = press_obj["act"].as<signed int>();
-            } else {
-                setting_press[i].actuation_type = ACTUATION_TYPE_DEFAULT;
-            }
-            // アクチュエーションポイント
-            if (press_obj.containsKey("acp")) {
-                setting_press[i].actuation_point = press_obj["acp"].as<signed int>();
-            } else {
-                setting_press[i].actuation_point = ACTUATION_POINT_DEFAULT;
-            }
-            // ラピットトリガー
-            if (press_obj.containsKey("rap")) {
-                setting_press[i].rapid_trigger = press_obj["rap"].as<signed int>();
-            } else {
-                setting_press[i].rapid_trigger = RAPID_TRIGGER_DEFAULT;
-            }
-            // ボタンの動作
-            setting_press[i].action_type = press_obj["action_type"].as<signed int>();
-            if (setting_press[i].action_type == 1) {
-                // 通常入力
-                normal_input.key_length = press_obj["key"].size();
-                normal_input.key = new uint16_t[normal_input.key_length];
-                for (j=0; j<normal_input.key_length; j++) {
-                      normal_input.key[j] = press_obj["key"][j].as<signed int>();
-                }
-                // 連打設定
-                if (press_obj.containsKey("repeat_interval")) {
-                    normal_input.repeat_interval = press_obj["repeat_interval"].as<signed int>();
-                } else {
-                    normal_input.repeat_interval = 51;
-                }
-                // ホールド設定
-                if (press_obj.containsKey("hold")) {
-                    normal_input.hold = press_obj["hold"].as<signed int>();
-                } else {
-                    normal_input.hold = 0;
-                }
-                setting_press[i].data = (char *)new setting_normal_input;
-                memcpy(setting_press[i].data, &normal_input, sizeof(setting_normal_input));
-            } else if (setting_press[i].action_type == 2) {
-                // テキスト入力
-                text_str = press_obj["text"].as<String>();
-                m = text_str.length() + 1;
-                setting_press[i].data = new char[m];
-                text_str.toCharArray(setting_press[i].data, m);
-            } else if (setting_press[i].action_type == 3) {
-                // レイヤー切り替え
-                layer_move_input.layer_id = press_obj["layer"].as<signed int>();
-                layer_move_input.layer_type = press_obj["layer_type"].as<signed int>();
-                if (layer_move_input.layer_type == 0) layer_move_input.layer_type = 0x51; // 切り替え方法の指定が無かった場合はMO(押している間切り替わる)
-                setting_press[i].data = (char *)new setting_layer_move;
-                memcpy(setting_press[i].data, &layer_move_input, sizeof(setting_layer_move));
-            } else if (setting_press[i].action_type == 4) {
-                // WEBフック
-                text_str = "";
-                serializeJson(press_obj["webhook"], text_str);
-                m = text_str.length() + 1;
-                setting_press[i].data = new char[m];
-                text_str.toCharArray(setting_press[i].data, m);
-                
-            } else if (setting_press[i].action_type == 5 || setting_press[i].action_type == 10) {
-                // 5.マウス移動 10.アナログマウス移動
-                mouse_move_input.x = press_obj["move"]["x"].as<signed int>();
-                mouse_move_input.y = press_obj["move"]["y"].as<signed int>();
-                mouse_move_input.wheel = press_obj["move"]["wheel"].as<signed int>();
-                mouse_move_input.hWheel = press_obj["move"]["hWheel"].as<signed int>();
-                mouse_move_input.speed = press_obj["move"]["speed"].as<signed int>();
-                setting_press[i].data = (char *)new setting_mouse_move;
-                memcpy(setting_press[i].data, &mouse_move_input, sizeof(setting_mouse_move));
-
-            } else if (setting_press[i].action_type == 6) {
-                // 暗記ボタン
-
-            } else if (setting_press[i].action_type == 7) {
-                // LED設定ボタン
-                setting_press[i].data = new char;
-                *setting_press[i].data = press_obj["led_setting_type"].as<signed int>();
-                
-            } else if (setting_press[i].action_type == 8) {
-                // 打鍵設定ボタン
-                setting_press[i].data = new char;
-                *setting_press[i].data = press_obj["dakagi_settype"].as<signed int>();
-
-            }
+            press_json = setting_obj["layers"][lkey]["keys"][kkey]["press"].as<JsonObject>();
+            this->get_keymap_one(press_json, &setting_press[i], lnum, knum);
             i++;
         }
     }
 
 }
 
+// JSONデータからキーマップの情報を読み込む(1キー分)
+void AzCommon::get_keymap_one(JsonObject json_obj, setting_key_press *press_obj, uint16_t lnum, uint16_t knum) {
+    int j, k, m, at, s;
+    String text_str;
+    setting_normal_input normal_input;
+    setting_layer_move layer_move_input;
+    setting_mouse_move mouse_move_input;
+
+    press_obj->layer = lnum; // 対象レイヤー
+    press_obj->key_num = knum; // 対象キーID
+    // アクチュエーションポイント
+    if (json_obj.containsKey("act")) {
+        press_obj->actuation_type = json_obj["act"].as<signed int>();
+    } else {
+        press_obj->actuation_type = ACTUATION_TYPE_DEFAULT;
+    }
+    // アクチュエーションポイント
+    if (json_obj.containsKey("acp")) {
+        press_obj->actuation_point = json_obj["acp"].as<signed int>();
+    } else {
+        press_obj->actuation_point = ACTUATION_POINT_DEFAULT;
+    }
+    // ラピットトリガー
+    if (json_obj.containsKey("rap")) {
+        press_obj->rapid_trigger = json_obj["rap"].as<signed int>();
+    } else {
+        press_obj->rapid_trigger = RAPID_TRIGGER_DEFAULT;
+    }
+    // ボタンの動作
+    press_obj->action_type = json_obj["action_type"].as<signed int>();
+    if (press_obj->action_type == 1) {
+        // 通常入力
+        normal_input.key_length = json_obj["key"].size();
+        normal_input.key = new uint16_t[normal_input.key_length];
+        for (j=0; j<normal_input.key_length; j++) {
+                normal_input.key[j] = json_obj["key"][j].as<signed int>();
+        }
+        // 連打設定
+        if (json_obj.containsKey("repeat_interval")) {
+            normal_input.repeat_interval = json_obj["repeat_interval"].as<signed int>();
+        } else {
+            normal_input.repeat_interval = 51;
+        }
+        // ホールド設定
+        if (json_obj.containsKey("hold")) {
+            normal_input.hold = json_obj["hold"].as<signed int>();
+        } else {
+            normal_input.hold = 0;
+        }
+        press_obj->data = (char *)new setting_normal_input;
+        memcpy(press_obj->data, &normal_input, sizeof(setting_normal_input));
+    } else if (press_obj->action_type == 2) {
+        // テキスト入力
+        text_str = json_obj["text"].as<String>();
+        m = text_str.length() + 1;
+        press_obj->data = new char[m];
+        text_str.toCharArray(press_obj->data, m);
+    } else if (press_obj->action_type == 3) {
+        // レイヤー切り替え
+        layer_move_input.layer_id = json_obj["layer"].as<signed int>();
+        layer_move_input.layer_type = json_obj["layer_type"].as<signed int>();
+        if (layer_move_input.layer_type == 0) layer_move_input.layer_type = 0x51; // 切り替え方法の指定が無かった場合はMO(押している間切り替わる)
+        press_obj->data = (char *)new setting_layer_move;
+        memcpy(press_obj->data, &layer_move_input, sizeof(setting_layer_move));
+    } else if (press_obj->action_type == 4) {
+        // WEBフック
+        text_str = "";
+        serializeJson(json_obj["webhook"], text_str);
+        m = text_str.length() + 1;
+        press_obj->data = new char[m];
+        text_str.toCharArray(press_obj->data, m);
+        
+    } else if (press_obj->action_type == 5 || press_obj->action_type == 10) {
+        // 5.マウス移動 10.アナログマウス移動
+        mouse_move_input.x = json_obj["move"]["x"].as<signed int>();
+        mouse_move_input.y = json_obj["move"]["y"].as<signed int>();
+        mouse_move_input.wheel = json_obj["move"]["wheel"].as<signed int>();
+        mouse_move_input.hWheel = json_obj["move"]["hWheel"].as<signed int>();
+        mouse_move_input.speed = json_obj["move"]["speed"].as<signed int>();
+        press_obj->data = (char *)new setting_mouse_move;
+        memcpy(press_obj->data, &mouse_move_input, sizeof(setting_mouse_move));
+
+    } else if (press_obj->action_type == 6) {
+        // 暗記ボタン
+
+    } else if (press_obj->action_type == 7) {
+        // LED設定ボタン
+        press_obj->data = new char;
+        *press_obj->data = json_obj["led_setting_type"].as<signed int>();
+        
+    } else if (press_obj->action_type == 8) {
+        // 打鍵設定ボタン
+        press_obj->data = new char;
+        *press_obj->data = json_obj["dakagi_settype"].as<signed int>();
+
+    }
+}
 
 // ファイルを開いてテキストをロードする
 int AzCommon::read_file(char *file_path, String &read_data) {
