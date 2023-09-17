@@ -95,6 +95,10 @@ int default_layer_no;
 int select_layer_no;
 int last_select_layer_key;
 
+// ホールセンサーの範囲
+short hall_range_min;
+short hall_range_max;
+
 // holdの設定
 uint8_t hold_type;
 uint8_t hold_time;
@@ -635,6 +639,17 @@ void AzCommon::load_setting_json() {
         if (setting_obj["hold"].containsKey("time")) {
             hold_time = setting_obj["hold"]["time"].as<signed int>();
         }
+    }
+    // ホールセンサーのアナログ値読み取り範囲
+    if (setting_obj.containsKey("hall_range_min")) {
+        hall_range_min = setting_obj["hall_range_min"].as<signed int>();
+    } else {
+        hall_range_min = HALL_RANGE_MIN_DEFAULT;
+    }
+    if (setting_obj.containsKey("hall_range_max")) {
+        hall_range_max = setting_obj["hall_range_max"].as<signed int>();
+    } else {
+        hall_range_max = HALL_RANGE_MAX_DEFAULT;
     }
     // 入力ピン情報取得
     int i, j, k, m, n, o, p, r;
@@ -1754,7 +1769,7 @@ void AzCommon::key_read(void) {
         }
         // 現在のアナログ値取得
         a = analogRead(hall_list[i]);
-        input_key_analog[i] = map(a, hall_offset[i] - 50, hall_offset[i] + 1200, 0, 255);
+        input_key_analog[i] = map(a, hall_offset[i] + hall_range_min, hall_offset[i] + hall_range_max, 0, 255);
         if (acpt == 0) {
             // 静的なアクチュエーションポイントとラピットトリガー
             // 固定位置で判定

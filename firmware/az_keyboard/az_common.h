@@ -87,10 +87,14 @@
 #define  ACTUATION_TYPE_DEFAULT  0
 
 // アクチュエーションポイントデフォルト
-#define  ACTUATION_POINT_DEFAULT  120
+#define  ACTUATION_POINT_DEFAULT  160
 
 // ラピットトリガーデフォルト
-#define  RAPID_TRIGGER_DEFAULT  100
+#define  RAPID_TRIGGER_DEFAULT  120
+
+// ホールセンサーのアナログ値読み取り範囲デフォルト
+#define  HALL_RANGE_MIN_DEFAULT -50;
+#define  HALL_RANGE_MAX_DEFAULT 1200;
 
 
 
@@ -397,6 +401,10 @@ extern uint8_t keyboard_language;
 extern int default_layer_no;
 extern int select_layer_no;
 extern int last_select_layer_key; // レイヤーボタン最後に押されたボタン(これが離されたらレイヤーリセット)
+
+// ホールセンサーの範囲
+extern short hall_range_min;
+extern short hall_range_max;
 
 // holdの設定
 extern uint8_t hold_type;
