@@ -103,6 +103,7 @@ struct press_key_data {
     short action_type; // キーの動作タイプ 0=設定なし / 1=通常入力 / 2=テキスト入力 / 3=レイヤー変更 / 4=WEBフック
     short layer_id; // キーを押した時のレイヤーID
     short key_num; // キー番号
+    short press_type; // 入力タイプ(0=press / 1=sub_press)
     short key_id; // 送信した文字
     short press_time; // キーを押してからどれくらい経ったか
     short unpress_time; // キーを離してからどれくらい経ったか
@@ -164,6 +165,8 @@ struct setting_key_press {
     short action_type; // 入力するタイプ
     short data_size; // データのサイズ
     char *data; // 入力データ
+    bool sub_press_flag; // サブ入力データの有無
+    void *sub_press; // サブ入力用データ
 };
 
 // IOエキスパンダオプションの設定
@@ -279,7 +282,7 @@ class AzCommon
         void pin_setup(); // キーの入力ピンの初期化
         bool layers_exists(int layer_no); // レイヤーが存在するか確認
         void layer_set(int layer_no); // 現在のレイヤーを指定したレイヤーにする
-        setting_key_press get_key_setting(int layer_id, int key_num); // 指定したキーの入力設定を取得する
+        setting_key_press get_key_setting(int layer_id, int key_num, short press_type); // 指定したキーの入力設定を取得する
         void load_data(); // EEPROMからデータをロードする
         void save_data(); // EEPROMに保存する
         void load_boot_count(); // 起動回数を取得してカウントアップする

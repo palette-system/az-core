@@ -90,15 +90,45 @@ void AzKeyboard::key_action_exec() {
         if (common_cls.input_key_last[i] != common_cls.input_key[i]) {
             if (common_cls.input_key[i] == 1) {
                 // キーが押された
-                key_down_action(i); // 押された時の動作
+                key_down_action(i, 0); // 押された時の動作
                 rgb_led_cls.set_led_buf(i, 1); // LED に押したよを送る
                 ankeycls.key_down(i); // 暗記クラスに押したよを送る(暗記用)
-                // 打鍵数カウントアップ
-                common_cls.key_count[i]++;
-                common_cls.key_count_total++;
+            } else if (common_cls.input_key[i] == 2) {
+                // 2段入力の 1段目が押された
+                if (common_cls.input_key_last[i] == 3) {
+                    // 前が2段目の入力だった場合は2段目のキーを離す
+                    key_up_action(i, 0); // 離された時の動作
+                    // 1段目のキーを押す
+                    key_down_action(i, 1); // 押された時の動作
+                } else {
+                    // 前が未入力の場合はそのまま1段目のキーを押す
+                    key_down_action(i, 1); // 押された時の動作
+                    rgb_led_cls.set_led_buf(i, 1); // LED に押したよを送る
+                    ankeycls.key_down(i); // 暗記クラスに押したよを送る(暗記用)
+                }
+            } else if (common_cls.input_key[i] == 3) {
+                // 2段入力の 2段目が押された
+                if (common_cls.input_key_last[i] == 2) {
+                    // 前が1段目入力だったら1段目を離す
+                    key_up_action(i, 1); // 離された時の動作
+                    // 2段目のキーを押す
+                    key_down_action(i, 0); // 押された時の動作
+                } else {
+                    // 前が未入力の場合はそのまま2段目を押す
+                    key_down_action(i, 0); // 押された時の動作
+                    rgb_led_cls.set_led_buf(i, 1); // LED に押したよを送る
+                    ankeycls.key_down(i); // 暗記クラスに押したよを送る(暗記用)
+                }
+
             } else {
                 // キーは離された
-                key_up_action(i); // 離された時の動作
+                if (common_cls.input_key_last[i] == 2) {
+                    // 前が2段入力の 1段目入力だった場合1段目を離す
+                    key_up_action(i, 1); // 離された時の動作
+                } else {
+                    // それ以外は通常のキーを離す
+                    key_up_action(i, 0); // 離された時の動作
+                }
                 rgb_led_cls.set_led_buf(i, 0); // LED に離したよを送る
                 ankeycls.key_up(i); // 暗記クラスに離したよを送る(暗記用)
             }
@@ -144,7 +174,7 @@ void AzKeyboard::key_repeat_exec() {
 
 // キーを押しましたリストに追加
 // 
-void AzKeyboard::press_key_list_push(int action_type, int key_num, int key_id, int layer_id, int repeat_interval) {
+void AzKeyboard::press_key_list_push(int action_type, int key_num, int key_id, int layer_id, int repeat_interval, short press_type) {
     int i, k = -1;
     // 既にリストに自分がいないかチェック(離してスグ押した時とかに自分がいる可能性がある)
     for (i=0; i<PRESS_KEY_MAX; i++) {
@@ -168,6 +198,7 @@ void AzKeyboard::press_key_list_push(int action_type, int key_num, int key_id, i
         press_key_list[k].key_num = key_num;
         press_key_list[k].key_id = key_id;
         press_key_list[k].layer_id = layer_id;
+        press_key_list[k].press_type = press_type;
         press_key_list[k].press_time = 0;
         press_key_list[k].unpress_time = 0;
         press_key_list[k].repeat_interval = repeat_interval;
@@ -291,12 +322,13 @@ void AzKeyboard::hold_press(int hold, int key_num) {
 }
 
 // キーが押された時の処理
-void AzKeyboard::key_down_action(int key_num) {
+void AzKeyboard::key_down_action(int key_num, short press_type) {
     int i, m, k, r;
+    // 打鍵数カウントアップ
+    common_cls.key_count[key_num]++;
+    common_cls.key_count_total++;
     // キーの設定取得
-    ESP_LOGD(LOG_TAG, "mmm: %D %D\n", heap_caps_get_free_size(MALLOC_CAP_32BIT), heap_caps_get_free_size(MALLOC_CAP_8BIT) );
-    setting_key_press key_set = common_cls.get_key_setting(select_layer_no, key_num);
-    ESP_LOGD(LOG_TAG, "mmm: %D %D\n", heap_caps_get_free_size(MALLOC_CAP_32BIT), heap_caps_get_free_size(MALLOC_CAP_8BIT) );
+    setting_key_press key_set = common_cls.get_key_setting(select_layer_no, key_num, press_type);
     // キーの押された時の設定があるか確認
     if (key_set.layer < 0 || key_set.key_num < 0 || key_set.action_type < 0) {
         // 設定が無ければ何もしない
@@ -309,7 +341,7 @@ void AzKeyboard::key_down_action(int key_num) {
     // キーボードの接続が無ければ何もしない(レイヤー切り替え、WEBフック以外)
     if (action_type != 3 && action_type != 4 && action_type != 6 && action_type != 7 && action_type != 8 && !bleKeyboard.isConnected()) {
         // 押したよリストに追加だけする
-        press_key_list_push(-1, key_num, -1, select_layer_no, -1);
+        press_key_list_push(-1, key_num, -1, select_layer_no, -1, press_type);
         return;
     }
     // 動作タイプ別の動作
@@ -323,7 +355,7 @@ void AzKeyboard::key_down_action(int key_num) {
             if (hold_type == 1) { // すぐにholdを送信
                 hold_press(normal_input.hold, key_num);
             }
-            press_key_list_push(9, key_num, normal_input.hold, m, -1); // アクションタイプは9:holdにする
+            press_key_list_push(9, key_num, normal_input.hold, m, -1, press_type); // アクションタイプは9:holdにする
         } else {
             // hold が無ければ通常のキー入力
             for (i=0; i<normal_input.key_length; i++) {
@@ -340,7 +372,7 @@ void AzKeyboard::key_down_action(int key_num) {
                     }
                 }
                 // キー押したよリストに追加
-                press_key_list_push(action_type, key_num, normal_input.key[i], select_layer_no, normal_input.repeat_interval);
+                press_key_list_push(action_type, key_num, normal_input.key[i], select_layer_no, normal_input.repeat_interval, press_type);
                 ESP_LOGD(LOG_TAG, "key press : %D %D\r\n", key_num, normal_input.key[i]);
             }
         }
@@ -349,7 +381,7 @@ void AzKeyboard::key_down_action(int key_num) {
         // 固定テキストの入力
         send_string(key_set.data); // 特定の文章を送る
         // キー押したよリストに追加
-        press_key_list_push(action_type, key_num, -1, select_layer_no, -1);
+        press_key_list_push(action_type, key_num, -1, select_layer_no, -1, press_type);
 
     } else if (action_type == 3) {
         setting_layer_move layer_move_input;
@@ -366,7 +398,7 @@ void AzKeyboard::key_down_action(int key_num) {
             default_layer_no = layer_move_input.layer_id;
         }
         // キー押したよリストに追加
-        press_key_list_push(action_type, key_num, -1, m, -1);
+        press_key_list_push(action_type, key_num, -1, m, -1, press_type);
         ESP_LOGD(LOG_TAG, "key press layer : %D %02x %D\r\n", key_num, layer_move_input.layer_type, layer_move_input.layer_id);
 
     } else if (action_type == 4) {
@@ -385,13 +417,13 @@ void AzKeyboard::key_down_action(int key_num) {
             mouse_move_input.hWheel,
             mouse_move_input.speed);
         // キー押したよリストに追加
-        press_key_list_push(action_type, key_num, -1, select_layer_no, -1);
+        press_key_list_push(action_type, key_num, -1, select_layer_no, -1, press_type);
 
     } else if (action_type == 6) {
         // 暗記ボタン
         ankeycls.ankey_down(select_layer_no, key_num);
         // キー押したよリストに追加
-        press_key_list_push(action_type, key_num, -1, select_layer_no, -1);
+        press_key_list_push(action_type, key_num, -1, select_layer_no, -1, press_type);
 
     } else if (action_type == 7 && ankeycls.ankey_flag == 0) {
         // LED設定ボタン(暗記処理中は動作無視)
@@ -430,16 +462,16 @@ void AzKeyboard::key_down_action(int key_num) {
         }
 
     }
-
 }
 
 // キーが離された時の処理
-void AzKeyboard::key_up_action(int key_num) {
+void AzKeyboard::key_up_action(int key_num, short press_type) {
     int i, j, k, m, action_type;
     setting_key_press key_set;
     setting_normal_input normal_input;
     for (i=0; i<PRESS_KEY_MAX; i++) {
         if (press_key_list[i].key_num != key_num) continue;
+        if (press_key_list[i].press_type != press_type) continue;
         ESP_LOGD(LOG_TAG, "key release action_type: %D - %D - %D\r\n", key_num, i, press_key_list[i].action_type);
         action_type = press_key_list[i].action_type;
         // キーボードの接続が無ければ何もしない(レイヤー切り替え、WEBフック以外)
@@ -463,7 +495,7 @@ void AzKeyboard::key_up_action(int key_num) {
             ESP_LOGD(LOG_TAG, "key release : %D\r\n", press_key_list[i].key_id);
         } else if (action_type == 3) {
             // レイヤー選択
-            key_set = common_cls.get_key_setting(press_key_list[i].layer_id, key_num);
+            key_set = common_cls.get_key_setting(press_key_list[i].layer_id, key_num, press_type);
             setting_layer_move layer_move_input;
             memcpy(&layer_move_input, key_set.data, sizeof(setting_layer_move));
             // Serial.printf("up: %d %d %02x %d\n", press_key_list[i].layer_id, key_num, layer_move_input.layer_type, layer_move_input.layer_id);
@@ -510,7 +542,7 @@ void AzKeyboard::key_up_action(int key_num) {
             // 押していた時間が短ければ単押しのキーを送信
             if (press_key_list[i].press_time < hold_time) {
                 // キーの設定取得
-                key_set = common_cls.get_key_setting(press_key_list[i].layer_id, key_num);
+                key_set = common_cls.get_key_setting(press_key_list[i].layer_id, key_num, press_type);
                 memcpy(&normal_input, key_set.data, sizeof(setting_normal_input));
                 // 設定されている単押しキーを押す
                 for (j=0; j<normal_input.key_length; j++) {
@@ -562,6 +594,7 @@ void AzKeyboard::press_data_reset() {
         press_key_list[i].key_num = -1;
         press_key_list[i].key_id = -1;
         press_key_list[i].layer_id = -1;
+        press_key_list[i].press_type = -1;
         press_key_list[i].unpress_time = -1;
         press_key_list[i].repeat_interval = -1;
         press_key_list[i].repeat_index = -1;
@@ -603,6 +636,7 @@ void AzKeyboard::press_data_clear() {
             press_key_list[i].key_num = -1;
             press_key_list[i].key_id = -1;
             press_key_list[i].layer_id = -1;
+            press_key_list[i].press_type = -1;
             press_key_list[i].press_time = -1;
             press_key_list[i].unpress_time = -1;
             press_key_list[i].repeat_interval = -1;

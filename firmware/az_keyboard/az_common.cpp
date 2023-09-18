@@ -284,6 +284,7 @@ void AzCommon::common_start() {
         press_key_list[i].action_type = -1;
         press_key_list[i].key_num = -1;
         press_key_list[i].key_id = -1;
+        press_key_list[i].press_type = -1;
         press_key_list[i].layer_id = -1;
         press_key_list[i].unpress_time = -1;
     }
@@ -1062,6 +1063,13 @@ void AzCommon::get_keymap(JsonObject setting_obj) {
             // Serial.printf("mem: %D %D\n", heap_caps_get_free_size(MALLOC_CAP_32BIT), heap_caps_get_free_size(MALLOC_CAP_8BIT) );
             press_json = setting_obj["layers"][lkey]["keys"][kkey]["press"].as<JsonObject>();
             this->get_keymap_one(press_json, &setting_press[i], lnum, knum);
+            setting_press[i].sub_press_flag = false;
+            if (setting_obj["layers"][lkey]["keys"][kkey].containsKey("sub")) {
+                setting_press[i].sub_press_flag = true;
+                setting_press[i].sub_press = new setting_key_press;
+                press_json = setting_obj["layers"][lkey]["keys"][kkey]["sub"].as<JsonObject>();
+                this->get_keymap_one(press_json, (setting_key_press *)setting_press[i].sub_press, lnum, knum);
+            }
             i++;
         }
     }
@@ -1445,7 +1453,7 @@ void AzCommon::layer_set(int layer_no) {
 }
 
 // 指定したキーの入力設定オブジェクトを取得する
-setting_key_press AzCommon::get_key_setting(int layer_id, int key_num) {
+setting_key_press AzCommon::get_key_setting(int layer_id, int key_num, short press_type) {
     int i;
     setting_key_press r;
     r.layer = -1;
@@ -1457,7 +1465,14 @@ setting_key_press AzCommon::get_key_setting(int layer_id, int key_num) {
     // 現在のレイヤーであれば key_point に入れてあった設定を返す
     if (select_layer_no == layer_id) {
         if (key_point[key_num] < 0) return r;
-        return setting_press[key_point[key_num]];
+        if (press_type == 0) {
+            // 通常キー入力 (or 2段入力 2段目)
+            return setting_press[key_point[key_num]];
+        } else if (press_type == 1) {
+            // 2段入力 1段目
+            if (!setting_press[key_point[key_num]].sub_press_flag) return r; // 1段目設定が無かった
+            return *(setting_key_press *)setting_press[key_point[key_num]].sub_press;
+        }
     }
     // 現在のレイヤーでなければキー設定から指定されたキーを探す
     for (i=0; i<setting_length; i++) {
@@ -1820,7 +1835,7 @@ void AzCommon::key_read(void) {
         } else if (acpt == 2) {
             // 2段階入力
             if (input_key_last[n] == 0) { // 前回が未入力
-                if (input_key_analog[i] > 180) {
+                if (input_key_analog[i] > 210) {
                     // 2段目まで押し込まれたら2段目にする
                     input_key[n] = 3; // 2段目ON
                     analog_stroke_most[i] = 0; // カウンタリセット
@@ -1839,7 +1854,7 @@ void AzCommon::key_read(void) {
                     analog_stroke_most[i] = 0;
                 }
             } else if (input_key_last[n] == 2) { // 前回が1段目ON
-                if (input_key_analog[i] > 180) {
+                if (input_key_analog[i] > 210) {
                     // 2段目の深さまで押し込まれた
                     input_key[n] = 3; // 2段目ON
                     analog_stroke_most[i] = 0; // カウンタリセット
@@ -1858,7 +1873,7 @@ void AzCommon::key_read(void) {
                     input_key[n] = 0; // OFF
                     analog_stroke_most[i] = 0; // カウンタリセット
 
-                } else if (input_key_analog[i] < 160) {
+                } else if (input_key_analog[i] < 200) {
                     // 2段目まで戻った
                     analog_stroke_most[i]++; // 戻ったよ数をカウントしていき、5回を超えたらONにする(素早い入力の時は1段目を飛ばすため)
                     if (analog_stroke_most[i] > 5) {

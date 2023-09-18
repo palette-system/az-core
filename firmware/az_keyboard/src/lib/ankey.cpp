@@ -201,10 +201,10 @@ void Ankey::loop_exec() {
 			// 入力処理
 			if (this->_andata[i].type == 1) {
 				// キーダウン
-				this->_azkb->key_down_action(this->_andata[i].key_num);
+				this->_azkb->key_down_action(this->_andata[i].key_num, 0);
 			} else if (this->_andata[i].type == 2) {
 				// キーアップ
-				this->_azkb->key_up_action(this->_andata[i].key_num);
+				this->_azkb->key_up_action(this->_andata[i].key_num, 0);
 			}
 			this->_data_index++;
 			this->_loop_index = 0;
