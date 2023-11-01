@@ -154,6 +154,11 @@ int ioxp_hash[8];
 i2c_option *i2copt;
 short i2copt_len;
 
+// Nubkey の設定
+nubkey_option *nubopt;
+short nubopt_len;
+int8_t nubkey_status;
+
 // 動作電圧チェック用ピン
 int8_t power_read_pin; // 電圧を読み込むピン
 
@@ -679,7 +684,7 @@ void AzCommon::load_setting_json() {
     if (setting_obj["keyboard_pin"].containsKey("hall")) {
         hall_len = setting_obj["keyboard_pin"]["hall"].size();
         hall_list = new short[hall_len]; // ホールセンサーにつながっているピン
-        input_key_analog = new char[hall_len]; // 現在のアナログ値
+        input_key_analog = new uint8_t[hall_len]; // 現在のアナログ値
         analog_stroke_most = new char[hall_len]; // キーを最も押し込んだ時のアナログ値
         for (i=0; i<hall_len; i++) {
             hall_list[i] = setting_obj["keyboard_pin"]["hall"][i].as<signed int>();
@@ -901,6 +906,50 @@ void AzCommon::load_setting_json() {
     } else {
         i2copt_len = 0;
     }
+
+    // Nubkey オプション
+    if (setting_obj.containsKey("nubkey") && setting_obj["nubkey"].size()) {
+        nubopt_len = setting_obj["nubkey"].size();
+        nubopt = new nubkey_option[nubopt_len]; // Nubkeyの設定を保持する変数
+        for (i=0; i<nubopt_len; i++) {
+            // 動作タイプ
+            if (setting_obj["nubkey"][i].containsKey("type")) {
+                nubopt[i].action_type = setting_obj["nubkey"][i]["type"].as<signed int>();
+            } else {
+                nubopt[i].action_type = 0;
+            }
+            // ピン
+            if (setting_obj["nubkey"][i].containsKey("pin") && setting_obj["nubkey"][i]["pin"].size()) {
+                nubopt[i].up_pin = setting_obj["nubkey"][i]["pin"][0].as<signed int>();
+                nubopt[i].down_pin = setting_obj["nubkey"][i]["pin"][1].as<signed int>();
+                nubopt[i].left_pin = setting_obj["nubkey"][i]["pin"][2].as<signed int>();
+                nubopt[i].right_pin = setting_obj["nubkey"][i]["pin"][3].as<signed int>();
+            }
+            // 移動速度
+            if (setting_obj["nubkey"][i].containsKey("spx")) {
+                nubopt[i].speed_x = setting_obj["nubkey"][i]["spx"].as<signed int>();
+            } else {
+                nubopt[i].speed_x = 8000;
+            }
+            if (setting_obj["nubkey"][i].containsKey("spy")) {
+                nubopt[i].speed_y = setting_obj["nubkey"][i]["spy"].as<signed int>();
+            } else {
+                nubopt[i].speed_y = 8000;
+            }
+            // 中央位置
+            nubopt[i].rang_x = 0;
+            nubopt[i].rang_y = 0;
+            // 動かすアクチュエーションポイント
+            if (setting_obj["nubkey"][i].containsKey("sp")) {
+                nubopt[i].start_point = setting_obj["nubkey"][i]["sp"].as<signed int>();
+            } else {
+                nubopt[i].start_point = 1300;
+            }
+        }
+    } else {
+        nubopt_len = 0;
+    }
+
 
     // key_input_length = 16 * ioxp_len;
     // キーの設定を取得
@@ -1408,6 +1457,18 @@ void AzCommon::pin_setup() {
         
     }
 
+    // Nubkey 初期化
+    nubkey_status = 0;
+    for (i=0; i<nubopt_len; i++) {
+        pinMode(nubopt[i].up_pin , ANALOG);
+        pinMode(nubopt[i].down_pin , ANALOG);
+        pinMode(nubopt[i].left_pin , ANALOG);
+        pinMode(nubopt[i].right_pin , ANALOG);
+        if (nubopt[i].action_type == 0) {
+            key_input_length++;
+        }
+    }
+
     // 動作電圧チェック用ピン
     // power_read_pin = 36;
 
@@ -1598,11 +1659,6 @@ void AzCommon::change_mode(int set_mode) {
     ESP.restart(); // ESP32再起動
 }
 
-// 指定したキーの入力ステータス取得
-int AzCommon::get_key_status(int key_num) {
-
-}
-
 int AzCommon::i2c_read(int p, i2c_option *opt, char *read_data) {
     int e, i, j, k, m, n, r, x, y;
     unsigned long start_time;
@@ -1691,9 +1747,9 @@ int AzCommon::i2c_read(int p, i2c_option *opt, char *read_data) {
                 if (mouse_scroll_flag) {
                     m = (y == 0)? 0: (y > 0)? 1: -1;
                     n = (x == 0)? 0: (x > 0)? 1: -1;
-                    press_mouse_list_push(0x2000, 5, 0, 0, m, n, 100);
+                    press_mouse_list_push(0x2000, 5, 0, 0, m, n, 100); // action_type : 5 = マウス移動
                 } else {
-                    press_mouse_list_push(0x2000, 5, x, y, 0, 0, i2cpim447_obj.speed);
+                    press_mouse_list_push(0x2000, 5, x, y, 0, 0, i2cpim447_obj.speed); // action_type : 5 = マウス移動
                 }
             } else if (opt->opt_type == 4) {
                 // フリック入力
@@ -1743,9 +1799,84 @@ int AzCommon::i2c_read(int p, i2c_option *opt, char *read_data) {
     return r;
 }
 
+// Nubkey 読み込み
+int AzCommon::nubkey_read(int p, nubkey_option *opt, char *read_data) {
+    int r = 0;
+    int a_up, a_down, a_left, a_right;
+    int x, y, w, mx, my;
+    if (nubkey_status != 0) {
+        if (nubkey_status == 1) {
+            // 中心位置設定中
+            nubkey_position_read(opt);
+        }
+        if (opt->action_type == 0) r++;
+        return r;
+    }
+    if (opt->action_type == 0) {
+        a_up = analogRead(opt->up_pin);
+        a_down = analogRead(opt->down_pin);
+        a_left = analogRead(opt->left_pin);
+        a_right = analogRead(opt->right_pin);
+        x = a_right - a_left - opt->rang_x;
+        y = a_down - a_up - opt->rang_y;
+        w = (a_up + a_down + a_left + a_right) / 4;
+        if (w < opt->start_point) {
+            mx = (x * (opt->start_point - w)) / opt->speed_x;
+            my = (y * (opt->start_point - w)) / opt->speed_y;
+            press_mouse_list_push(0x2000, 5, mx, my, 0, 0, 100); // action_type : 5 = マウス移動
+        }
+        read_data[p] = 0;
+        r++;
+        p++;
+    }
+    return r;
+}
+
+// Nubkey ポジション設定情報初期化
+void AzCommon::nubkey_position_init() {
+    int i;
+    for (i=0; i<nubopt_len; i++) {
+        nubopt[i].read_x_min = 0;
+        nubopt[i].read_x_max = 0;
+        nubopt[i].read_y_min = 0;
+        nubopt[i].read_y_max = 0;
+    }
+}
+
+
+// Nubkey ポジション設定中動作
+void AzCommon::nubkey_position_read(nubkey_option *opt) {
+    int a_up, a_down, a_left, a_right;
+    int x, y;
+    a_up = analogRead(opt->up_pin);
+    a_down = analogRead(opt->down_pin);
+    a_left = analogRead(opt->left_pin);
+    a_right = analogRead(opt->right_pin);
+    x = a_right - a_left;
+    y = a_down - a_up;
+    if (opt->read_x_min > x) opt->read_x_min = x;
+    if (opt->read_x_max < x) opt->read_x_max = x;
+    if (opt->read_y_min > y) opt->read_y_min = y;
+    if (opt->read_y_max < y) opt->read_y_max = y;
+}
+
+// Nubkey ポジション反映
+void AzCommon::nubkey_position_set() {
+    int i;
+    int mx, my, wx, wy;
+    // 全てのNubkeyに対して行う
+    for (i=0; i<nubopt_len; i++) {
+        mx = nubopt[i].read_x_max - nubopt[i].read_x_min;
+        my = nubopt[i].read_y_max - nubopt[i].read_y_min;
+        if (mx < 100 || my < 100) continue; // ふり幅が100以下の場合設定変更しない(触られていない)
+        nubopt[i].rang_x = nubopt[i].read_x_min + (mx / 2);
+        nubopt[i].rang_y = nubopt[i].read_y_min + (my / 2);
+    }
+}
+
 // 現在のキーの入力状態を取得
 void AzCommon::key_read(void) {
-    int a, i, j, n, s;
+    int a, i, j, m, n, s;
     int act, acp, acpt, rap;
     setting_key_press *k;
     n = 0;
@@ -1789,7 +1920,10 @@ void AzCommon::key_read(void) {
         }
         // 現在のアナログ値取得
         a = analogRead(hall_list[i]);
-        input_key_analog[i] = map(a, hall_offset[i] + hall_range_min, hall_offset[i] + hall_range_max, 0, 255);
+        m = map(a, hall_offset[i] + hall_range_min, hall_offset[i] + hall_range_max, 0, 255);
+        if (m > 255) m = 255;
+        if (m < 0) m = 0;
+        input_key_analog[i] = m;
         if (acpt == 0) {
             // 静的なアクチュエーションポイントとラピットトリガー
             // 固定位置で判定
@@ -1940,6 +2074,10 @@ void AzCommon::key_read(void) {
     // I2Cオプション
     for (i=0; i<i2copt_len; i++) {
         n += i2c_read(n, &i2copt[i], input_key);
+    }
+    // Nubkey 読み込み
+    for (i=0; i<nubopt_len; i++) {
+        n += nubkey_read(n, &nubopt[i], input_key);
     }
 }
 

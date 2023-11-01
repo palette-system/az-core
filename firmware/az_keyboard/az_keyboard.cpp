@@ -461,6 +461,14 @@ void AzKeyboard::key_down_action(int key_num, short press_type) {
             dakeycls.save_dakey(1);
         }
 
+    } else if (action_type == 11) {
+        // Nubkey 位置調整ボタン
+        nubkey_status = 1; // 位置調整中に変更
+        // Nubkey の位置取得を空に
+        common_cls.nubkey_position_init();
+        // キー押したよリストに追加
+        press_key_list_push(action_type, key_num, -1, select_layer_no, -1, press_type);
+
     }
 }
 
@@ -559,6 +567,10 @@ void AzKeyboard::key_up_action(int key_num, short press_type) {
                     }
                 }
             }
+
+        } else if (action_type == 11) {
+            // Nubkey 位置調整ボタン
+            nubkey_status = 0; // 動作中に戻す
 
         }
         // スグクリアしない。離したよカウンターカウント開始
@@ -685,7 +697,6 @@ void AzKeyboard::press_data_clear() {
 
 // 定期実行の処理
 void AzKeyboard::loop_exec(void) {
-    while (true) {
 
 
     // 現在のキーの状態を前回部分にコピー
@@ -733,6 +744,5 @@ void AzKeyboard::loop_exec(void) {
     }
 
     delay(5);
-    }
 
 }

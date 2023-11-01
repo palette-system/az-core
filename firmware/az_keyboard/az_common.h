@@ -221,6 +221,28 @@ struct i2c_option {
     i2c_map *i2cmap;
 };
 
+// Nubkey 設定
+struct nubkey_option {
+    // 基本設定
+    uint8_t action_type; // 動作タイプ
+    uint8_t up_pin; // ホールセンサー上のピン
+    uint8_t down_pin; // ホールセンサー下のピン
+    uint8_t left_pin; // ホールセンサー左のピン
+    uint8_t right_pin; // ホールセンサー右のピン
+    short start_point; // マウス移動が始まる位置
+    // 基準値用
+    short read_x_min; // X の最小
+    short read_x_max; // X の最大
+    short read_y_min; // Y の最小
+    short read_y_max; // Y の最大
+    short rang_x; // X の中心位置
+    short rang_y; // Y の中心位置
+    short speed_x; // X の速度調整
+    short speed_y; // Y の速度調整
+};
+
+
+
 // WIFI設定
 struct setting_wifi {
     char *ssid;
@@ -291,10 +313,13 @@ class AzCommon
         void set_boot_mode(int set_mode); // 起動モードを切り替えてEEPROMに保存
         void change_mode(int set_mode); // モードを切り替えて再起動
         int i2c_read(int p, i2c_option *opt, char *read_data); // I2C機器のキー状態を取得
-        int get_key_status(int key_num); // 指定したキーの入力ステータス取得
+        int nubkey_read(int p, nubkey_option *opt, char *read_data); // Nubkeyのキー状態を取得
+        void nubkey_position_init(); // Nubkey ポジション設定情報初期化
+        void nubkey_position_read(nubkey_option *opt); // Nubkey ポジション設定中動作
+        void nubkey_position_set(); // Nubkey ポジション反映
         void key_read(); // 現在のキーの状態を取得
         void key_old_copy(); // 現在のキーの状態を過去用配列にコピー
-        char *input_key_analog; // 今入力中のアナログ値
+        uint8_t *input_key_analog; // 今入力中のアナログ値
         char *analog_stroke_most; // 最も押し込んだ時のアナログ値
         char *input_key; // 今入力中のキー(ステータス)
         char *input_key_last; // 最後にチェックした入力中のキー(ステータス)
@@ -367,6 +392,11 @@ extern int ioxp_hash[8];
 // I2Cオプションの設定
 extern i2c_option *i2copt;
 extern short i2copt_len;
+
+// Nubkey 設定
+extern nubkey_option *nubopt;
+extern short nubopt_len;
+extern int8_t nubkey_status;
 
 // 動作電圧チェック用ピン
 extern int8_t power_read_pin; // 電圧を読み込むピン
