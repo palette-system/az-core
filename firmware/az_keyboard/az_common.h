@@ -63,7 +63,7 @@
 #define LOOP_DELAY_DEFAULT  5
 
 // ファームウェアのバージョン文字
-#define FIRMWARE_VERSION   "000118"
+#define FIRMWARE_VERSION   "000119"
 
 // EEPROMに保存しているデータのバージョン文字列
 #define EEP_DATA_VERSION    "AZC001"
@@ -230,6 +230,8 @@ struct nubkey_option {
     uint8_t left_pin; // ホールセンサー左のピン
     uint8_t right_pin; // ホールセンサー右のピン
     short start_point; // マウス移動が始まる位置
+    short tap_time; // タップと判定する時間
+    short enable_time; // ONになってからの時間
     // 基準値用
     short read_x_min; // X の最小
     short read_x_max; // X の最大
@@ -241,6 +243,13 @@ struct nubkey_option {
     short speed_y; // Y の速度調整
 };
 
+// Nubkeyの保存した調整データ
+struct nubkey_setting_data {
+    short read_x_min; // X の最小
+    short read_x_max; // X の最大
+    short read_y_min; // Y の最小
+    short read_y_max; // Y の最大
+};
 
 
 // WIFI設定

@@ -945,6 +945,12 @@ void AzCommon::load_setting_json() {
             } else {
                 nubopt[i].start_point = 1300;
             }
+            // タップと判定する時間
+            if (setting_obj["nubkey"][i].containsKey("tt")) {
+                nubopt[i].tap_time = setting_obj["nubkey"][i]["tt"].as<signed int>();
+            } else {
+                nubopt[i].tap_time = 30;
+            }
         }
     } else {
         nubopt_len = 0;
@@ -1394,7 +1400,11 @@ int AzCommon::i2c_setup(int p, i2c_option *opt) {
 void AzCommon::pin_setup() {
     // output ピン設定 (colで定義されているピンを全てoutputにする)
     int c, i, j, m, x;
+    int mx, my;
     int offset_buf[10][hall_len];
+    File fp;
+    char nubkey_path[16];
+    nubkey_setting_data nub_data;
 
     for (i=0; i<col_len; i++) {
         if (!AZ_DEBUG_MODE || (col_list[i] != 1 && col_list[i] != 3)) pinMode(col_list[i], OUTPUT_OPEN_DRAIN);
@@ -1460,10 +1470,26 @@ void AzCommon::pin_setup() {
     // Nubkey 初期化
     nubkey_status = 0;
     for (i=0; i<nubopt_len; i++) {
+        // ピンの初期化
         pinMode(nubopt[i].up_pin , ANALOG);
         pinMode(nubopt[i].down_pin , ANALOG);
         pinMode(nubopt[i].left_pin , ANALOG);
         pinMode(nubopt[i].right_pin , ANALOG);
+        // 位置調整データがあれば読み込み
+        sprintf(nubkey_path, "/n%D", i);
+        if (SPIFFS.exists(nubkey_path)) {
+            fp = SPIFFS.open(nubkey_path, "r");
+            fp.read((uint8_t *)&nub_data, sizeof(nubkey_setting_data));
+            fp.close();
+            mx = nub_data.read_x_max - nub_data.read_x_min;
+            my = nub_data.read_y_max - nub_data.read_y_min;
+            if (mx > 100 && my > 100) { // ふり幅が100以下の場合読み込まない
+                // 中心位置を計算
+                nubopt[i].rang_x = nub_data.read_x_min + (mx / 2);
+                nubopt[i].rang_y = nub_data.read_y_min + (my / 2);
+            }
+        }
+        // キーの数を加算
         if (nubopt[i].action_type == 0) {
             key_input_length++;
         }
@@ -1813,6 +1839,7 @@ int AzCommon::nubkey_read(int p, nubkey_option *opt, char *read_data) {
         return r;
     }
     if (opt->action_type == 0) {
+        read_data[p] = 0;
         a_up = analogRead(opt->up_pin);
         a_down = analogRead(opt->down_pin);
         a_left = analogRead(opt->left_pin);
@@ -1820,12 +1847,19 @@ int AzCommon::nubkey_read(int p, nubkey_option *opt, char *read_data) {
         x = a_right - a_left - opt->rang_x;
         y = a_down - a_up - opt->rang_y;
         w = (a_up + a_down + a_left + a_right) / 4;
-        if (w < opt->start_point) {
+        if (opt->enable_time < opt->tap_time && w < 1300) {
+            opt->enable_time++;
+        } else if (w < opt->start_point) {
             mx = (x * (opt->start_point - w)) / opt->speed_x;
             my = (y * (opt->start_point - w)) / opt->speed_y;
             press_mouse_list_push(0x2000, 5, mx, my, 0, 0, 100); // action_type : 5 = マウス移動
+        } else {
+            // 短い時間押されていたらタップされたと判定してキーをONにする
+            if (opt->enable_time > 0 && opt->enable_time < opt->tap_time) {
+                read_data[p] = 1;
+            }
+            opt->enable_time = 0;
         }
-        read_data[p] = 0;
         r++;
         p++;
     }
@@ -1864,13 +1898,28 @@ void AzCommon::nubkey_position_read(nubkey_option *opt) {
 void AzCommon::nubkey_position_set() {
     int i;
     int mx, my, wx, wy;
+    char save_path[16];
+    nubkey_setting_data save_data;
+    File fp;
     // 全てのNubkeyに対して行う
     for (i=0; i<nubopt_len; i++) {
+        // ふり幅を計算
         mx = nubopt[i].read_x_max - nubopt[i].read_x_min;
         my = nubopt[i].read_y_max - nubopt[i].read_y_min;
         if (mx < 100 || my < 100) continue; // ふり幅が100以下の場合設定変更しない(触られていない)
+        // 中心位置を計算
         nubopt[i].rang_x = nubopt[i].read_x_min + (mx / 2);
         nubopt[i].rang_y = nubopt[i].read_y_min + (my / 2);
+        // 設定情報をファイルに書き出し
+        save_data.read_x_min = nubopt[i].read_x_min;
+        save_data.read_x_max = nubopt[i].read_x_max;
+        save_data.read_y_min = nubopt[i].read_y_min;
+        save_data.read_y_max = nubopt[i].read_y_max;
+        sprintf(save_path, "/n%D", i);
+        fp = SPIFFS.open(save_path, "w");
+        fp.write((uint8_t *)&save_data, sizeof(nubkey_setting_data));
+        fp.close();
+        delay(50);
     }
 }
 

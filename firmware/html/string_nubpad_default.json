@@ -1,7 +1,5 @@
 {
-	"ap": {
-		"pass": ""
-	},
+	"ap": {"pass": ""},
 	"wifi": [],
 	"vendorId": "0xe502",
 	"productId": "0x0202",
@@ -9,17 +7,17 @@
 	"key_matrix": [],
 	"keyboard_language": 0,
 	"keyboard_name": "AZ-Nubpad",
-	"keyboard_type": "AZ-Nubpad",
+	"keyboard_type": "az_nubpad",
 	"keyboard_pin": {
 		"row": [],
 		"col": [],
 		"direct": [],
 		"touch": [],
-        "hall": [7,1,4]
+		"hall": [7, 1, 4]
 	},
-    "nubkey": [
-        {"pin": [6,2,3,5]}
-    ],
+	"nubkey": [
+		{"pin": [6, 2, 3, 5], "spx": 10000, "spy": 10000, "tt": 30}
+	],
 	"i2c_set": [44, 43, 400000],
 	"default_layer": 0,
 	"layers": {
@@ -28,20 +26,25 @@
 			"keys": {
 				"key_0": {
 					"press": {
-						"action_type": 1,
-						"key": [4]
+						"action_type": 11
 					}
 				},
 				"key_1": {
 					"press": {
-						"action_type": 11,
-						"key": [5]
+						"action_type": 1,
+						"key": [16385]
 					}
 				},
 				"key_2": {
 					"press": {
 						"action_type": 1,
-						"key": [6]
+						"key": [16386]
+					}
+				},
+				"key_3": {
+					"press": {
+						"action_type": 1,
+						"key": [22]
 					}
 				}
 			}

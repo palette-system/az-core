@@ -571,6 +571,9 @@ void AzKeyboard::key_up_action(int key_num, short press_type) {
         } else if (action_type == 11) {
             // Nubkey 位置調整ボタン
             nubkey_status = 0; // 動作中に戻す
+            // Nubkey の位置調整を反映
+            common_cls.nubkey_position_set();
+            
 
         }
         // スグクリアしない。離したよカウンターカウント開始
