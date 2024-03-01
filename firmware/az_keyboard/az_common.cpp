@@ -1080,6 +1080,7 @@ void AzCommon::clear_keymap() {
         } else if (setting_press[i].action_type == 9) { // holdボタン
         } else if (setting_press[i].action_type == 10) { // アナログマウス移動
             delete setting_press[i].data;
+        } else if (setting_press[i].action_type == 11) { // Nubkey位置調節
         }
     }
     delete[] setting_press;
@@ -1444,29 +1445,6 @@ void AzCommon::pin_setup() {
     // キー数の計算
     key_input_length = (col_len * row_len) + direct_len + touch_len + hall_len;
 
-    // I2C初期化
-    if (ioxp_sda >= 0 && ioxp_scl >= 0) {
-
-        // I2Cクラス初期化
-        if (Wire.begin(ioxp_sda, ioxp_scl)) {
-            Wire.setClock(ioxp_hz);
-        } else {
-            delay(1000);
-        }        
-
-        // メインOLED初期化
-        if (oled_main_addr > 0 && oled_main_width > 0 && oled_main_height > 0) {
-            oled_cls = new Oled();
-            oled_cls->begin(oled_main_width, oled_main_height, oled_main_addr, ioxp_hz);
-        }
-
-        // I2C接続のオプション初期化
-        for (i=0; i<i2copt_len; i++) {
-            key_input_length = i2c_setup(key_input_length, &i2copt[i]);
-        }
-        
-    }
-
     // Nubkey 初期化
     nubkey_status = 0;
     for (i=0; i<nubopt_len; i++) {
@@ -1493,6 +1471,29 @@ void AzCommon::pin_setup() {
         if (nubopt[i].action_type == 0) {
             key_input_length++;
         }
+    }
+
+    // I2C初期化
+    if (ioxp_sda >= 0 && ioxp_scl >= 0) {
+
+        // I2Cクラス初期化
+        if (Wire.begin(ioxp_sda, ioxp_scl)) {
+            Wire.setClock(ioxp_hz);
+        } else {
+            delay(1000);
+        }        
+
+        // メインOLED初期化
+        if (oled_main_addr > 0 && oled_main_width > 0 && oled_main_height > 0) {
+            oled_cls = new Oled();
+            oled_cls->begin(oled_main_width, oled_main_height, oled_main_addr, ioxp_hz);
+        }
+
+        // I2C接続のオプション初期化
+        for (i=0; i<i2copt_len; i++) {
+            key_input_length = i2c_setup(key_input_length, &i2copt[i]);
+        }
+        
     }
 
     // 動作電圧チェック用ピン
@@ -2120,13 +2121,13 @@ void AzCommon::key_read(void) {
             n++;
         }
     }
-    // I2Cオプション
-    for (i=0; i<i2copt_len; i++) {
-        n += i2c_read(n, &i2copt[i], input_key);
-    }
     // Nubkey 読み込み
     for (i=0; i<nubopt_len; i++) {
         n += nubkey_read(n, &nubopt[i], input_key);
+    }
+    // I2Cオプション
+    for (i=0; i<i2copt_len; i++) {
+        n += i2c_read(n, &i2copt[i], input_key);
     }
 }
 
