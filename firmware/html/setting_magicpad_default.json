@@ -1,0 +1,155 @@
+{
+	"ap": {"pass": ""},
+	"wifi": [],
+	"vendorId": "0xe502",
+	"productId": "0x0203",
+	"led_num": [],
+	"key_matrix": [],
+	"keyboard_language": 0,
+	"keyboard_name": "AZ-Magicpad",
+	"keyboard_type": "az_magicpad",
+	"keyboard_pin": {
+		"row": [],
+		"col": [],
+		"direct": [],
+		"touch": [],
+		"hall": [5,9,12,15,2,6,8,11,14,1,4,7,10,13]
+	},
+	"i2c_set": [43,44,400000],
+	"default_layer": 0,
+	"layers": {
+		"layer_0": {
+			"name": "レイヤー0",
+			"keys": {
+				"key_0": {
+					"press": {
+						"action_type": 1,
+						"key": [4]
+					}
+				},
+				"key_1": {
+					"press": {
+						"action_type": 1,
+						"key": [5]
+					}
+				},
+				"key_2": {
+					"press": {
+						"action_type": 1,
+						"key": [6]
+					}
+				},
+				"key_3": {
+					"press": {
+						"action_type": 1,
+						"key": [7]
+					}
+				},
+				"key_4": {
+					"press": {
+						"action_type": 1,
+						"key": [8]
+					}
+				},
+				"key_5": {
+					"press": {
+						"action_type": 1,
+						"key": [9]
+					}
+				},
+				"key_6": {
+					"press": {
+						"action_type": 1,
+						"key": [16385]
+					}
+				},
+				"key_7": {
+					"press": {
+						"action_type": "10",
+						"move": {
+							"x": "0",
+							"y": "-2",
+							"wheel": "0",
+							"hWheel": "0",
+							"speed": "0"
+						},
+						"acp": 30,
+						"rap": 20,
+						"act": 0
+					}
+				},
+				"key_8": {
+					"press": {
+						"action_type": 1,
+						"key": [16386]
+					}
+				},
+				"key_9": {
+					"press": {
+						"action_type": 1,
+						"key": [10]
+					}
+				},
+				"key_10": {
+					"press": {
+						"action_type": 1,
+						"key": [11]
+					}
+				},
+				"key_11": {
+					"press": {
+						"action_type": "10",
+						"move": {
+							"x": "-2",
+							"y": "0",
+							"wheel": "0",
+							"hWheel": "0",
+							"speed": "0"
+						},
+						"acp": 30,
+						"rap": 20,
+						"act": 0
+					}
+				},
+				"key_12": {
+					"press": {
+						"action_type": "10",
+						"move": {
+							"x": "0",
+							"y": "2",
+							"wheel": "0",
+							"hWheel": "0",
+							"speed": "0"
+						},
+						"acp": 30,
+						"rap": 20,
+						"act": 0
+					}
+				},
+				"key_13": {
+					"press": {
+						"action_type": "10",
+						"move": {
+							"x": "2",
+							"y": "0",
+							"wheel": "0",
+							"hWheel": "0",
+							"speed": "0"
+						},
+						"act": 0,
+						"rap": 20,
+						"acp": 30
+					}
+				}
+			}
+		}
+	},
+	"i2c_option": [],
+	"hold": {
+		"type": 1,
+		"time": 45
+	},
+	"hall_range_min": -50,
+	"hall_range_max": 1150,
+	"loop_delay": 1
+}
