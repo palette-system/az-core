@@ -610,6 +610,7 @@ void AzKeyboard::press_data_reset() {
         press_key_list[i].key_id = -1;
         press_key_list[i].layer_id = -1;
         press_key_list[i].press_type = -1;
+        press_key_list[i].press_time = 0;
         press_key_list[i].unpress_time = -1;
         press_key_list[i].repeat_interval = -1;
         press_key_list[i].repeat_index = -1;

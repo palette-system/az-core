@@ -86,7 +86,7 @@ void BleKeyboardJIS::taskServer(void* pvParameter)
     bleKeyboardInstance->pManufacturerCharacteristic->setCallbacks(&chrCallbacks);
 
     //HidService
-    bleKeyboardInstance->pHidService = bleKeyboardInstance->pServer->createService(NimBLEUUID("1812"), 40);
+    bleKeyboardInstance->pHidService = bleKeyboardInstance->pServer->createService(NimBLEUUID("1812"));
 
     //HidService-hidInfo
     bleKeyboardInstance->pHidInfoCharacteristic = bleKeyboardInstance->pHidService->createCharacteristic("2A4A", NIMBLE_PROPERTY::READ);// HID Information 会社名？とか？あと何かのフラグ

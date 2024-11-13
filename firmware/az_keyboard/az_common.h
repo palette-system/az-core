@@ -309,7 +309,7 @@ class AzCommon
         int read_file(char *file_path, String &read_data); // ファイルからデータを読み出す
         int write_file(char *file_path, String &write_data); // ファイルにデータを保存する
         int remove_file(char *file_path); // ファイルを削除する
-        int i2c_setup(int p, i2c_option *opt); // IOエキスパンダの初期化(戻り値：増えるキーの数)
+        int i2c_setup(int p, i2c_option *opt, short map_set); // IOエキスパンダの初期化(戻り値：増えるキーの数)
         void pin_setup(); // キーの入力ピンの初期化
         bool layers_exists(int layer_no); // レイヤーが存在するか確認
         void layer_set(int layer_no); // 現在のレイヤーを指定したレイヤーにする
