@@ -1,6 +1,8 @@
 
 #include "HTTPClient_my.h"
 
+#define HTTP_TCP_BUFFER_SIZE (1024)
+
 
 int HTTPClient_my::sendPostFile(char *file_path) {
 

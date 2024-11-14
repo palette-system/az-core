@@ -318,10 +318,9 @@ void AzCommon::common_start() {
 
 // ステータスLEDチカ用タイマー登録
 void AzCommon::set_status_led_timer() {
-    timer = timerBegin(0, 80, true); //timer=1us
-    timerAttachInterrupt(timer, &status_led_write, true);
-    timerAlarmWrite(timer, 100000, true); // 100ms
-    timerAlarmEnable(timer);
+    timer = timerBegin(80); //timer=1us
+    timerAttachInterrupt(timer, &status_led_write);
+    timerAlarm(timer, 100000, true, 0); // 100ms
 }
 
 // RGBステータスループ開始
