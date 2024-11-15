@@ -143,6 +143,7 @@ short *touch_list;
 short *hall_list;
 short *hall_offset;
 
+// 入力ピン情報 I2C
 short *ioxp_list;
 short ioxp_sda;
 short ioxp_scl;
@@ -153,6 +154,14 @@ int ioxp_hash[8];
 // I2Cオプションの設定
 i2c_option *i2copt;
 short i2copt_len;
+
+// 入力ピン情報 シリアル通信(赤外線)
+short seri_tx;
+short seri_rx;
+int seri_hz;
+
+// シリアル通信（赤外線）設定
+uint16_t seri_input[SERIAL_INPUT_MAX];
 
 // Nubkey の設定
 nubkey_option *nubopt;
@@ -297,6 +306,10 @@ void AzCommon::common_start() {
     ioxp_sda = -1;
     ioxp_scl = -1;
     ioxp_hz = 400000;
+    // シリアル通信(赤外線)ピン
+    seri_tx = -1;
+    seri_rx = -1;
+    seri_hz = 1200;
     // ioエキスパンダフラグ
     for (i=0; i<8; i++) {
       ioxp_status[i] = -1;
@@ -711,6 +724,17 @@ void AzCommon::load_setting_json() {
         ioxp_hz = 400000;
     }
 
+    // シリアル通信(赤外線)ピン
+    if (setting_obj.containsKey("seri_set") && setting_obj["seri_set"].size() == 3) {
+        seri_tx = setting_obj["seri_set"][0].as<signed int>();
+        seri_rx = setting_obj["seri_set"][1].as<signed int>();
+        seri_hz = setting_obj["seri_set"][2].as<signed int>();
+    } else {
+        seri_tx = -1;
+        seri_rx = -1;
+        seri_hz = 1200;
+    }
+
     // I2cオプションの設定
     i2c_map i2cmap_obj;
     i2c_ioxp i2cioxp_obj;
@@ -748,7 +772,7 @@ void AzCommon::load_setting_json() {
             i2copt[j].opt_type = opt_type & 0xff;
             // Serial.printf("i2c_option: load %D type %D - %D\n", i, opt_type, i2copt[j].opt_type);
             // マッピング情報の読み込み
-            if (opt_type == 1 || opt_type == 2 || opt_type == 3 || opt_type == 4 || opt_type == 5) { // 1 = IOエキスパンダ（MCP23017）/ 2 = Tiny202 ロータリーエンコーダ
+            if (opt_type == 1 || opt_type == 2 || opt_type == 3 || opt_type == 4 || opt_type == 5 || opt_type == 7) { // 1 = IOエキスパンダ（MCP23017）/ 2 = Tiny202 ロータリーエンコーダ
                 // キーマッピング設定
                 if (setting_obj["i2c_option"][i].containsKey("map") &&
                         setting_obj["i2c_option"][i]["map"].size() ) {
@@ -1375,7 +1399,7 @@ int AzCommon::i2c_setup(int p, i2c_option *opt, short map_set) {
     // マップ設定をするフラグが無ければここで返す
     if (map_set <= 0) return p;
     // マッピングに合わせてキー番号を付けなおす
-    if (opt->opt_type == 1 || opt->opt_type == 2 || opt->opt_type == 3 || opt->opt_type == 4 || opt->opt_type == 5) {
+    if (opt->opt_type == 1 || opt->opt_type == 2 || opt->opt_type == 3 || opt->opt_type == 4 || opt->opt_type == 5 || opt->opt_type == 7) {
         // キーの番号をmapデータに入れる
         // あとでキー設定の番号入れ替えをここでやる
         memcpy(&i2cmap_obj, opt->i2cmap, sizeof(i2c_map));
@@ -1497,6 +1521,16 @@ void AzCommon::pin_setup() {
         }
         
     }
+
+    // シリアル通信(赤外線)初期化
+    if ((seri_tx >= 0 || seri_rx >= 0) && seri_hz > 0 ) {
+        Serial2.begin(seri_hz, SERIAL_8N1, seri_tx, seri_rx);
+    }
+    // シリアル通信(赤外線)入力データの初期化
+    for (i=0; i<SERIAL_INPUT_MAX; i++) {
+        seri_input[SERIAL_INPUT_MAX] = 0;
+    }
+    
 
     // 動作電圧チェック用ピン
     // power_read_pin = 36;
@@ -1832,9 +1866,15 @@ int AzCommon::i2c_read(int p, i2c_option *opt, char *read_data) {
             e++;
         }
 
+    } else if (opt->opt_type == 7) {
+        // シリアル通信(赤外線)
+        // シリアル通信時に更新してる入力ステータスをそのまま持ってくるだけ
+        memcpy(&read_raw, &seri_input, sizeof(seri_input));
+        e = 16;
+
     }
     // 読み込んだデータからキー入力を取得
-    if (opt->opt_type == 1 || opt->opt_type == 2 || opt->opt_type == 3 || opt->opt_type == 4 || opt->opt_type == 5) {
+    if (opt->opt_type == 1 || opt->opt_type == 2 || opt->opt_type == 3 || opt->opt_type == 4 || opt->opt_type == 5 || opt->opt_type == 7) {
         // マップデータ分入力を取得
         for (j=0; j<i2cmap_obj.map_len; j++) {
             n = i2cmap_obj.map[j];
@@ -1847,6 +1887,14 @@ int AzCommon::i2c_read(int p, i2c_option *opt, char *read_data) {
         }
     }
     return r;
+}
+
+// シリアル通信(赤外線)読み込み
+void AzCommon::serial_read() {
+  uint8_t read_buf;
+  if(Serial2.available()){ //Serial2に受信データがあるか
+    read_buf = Serial2.read(); //Serial2データを読み出し
+  }
 }
 
 // Nubkey 読み込み
@@ -2148,6 +2196,8 @@ void AzCommon::key_read(void) {
     for (i=0; i<nubopt_len; i++) {
         n += nubkey_read(n, &nubopt[i], input_key);
     }
+    // シリアル通信(赤外線)読み込み
+    serial_read();
     // I2Cオプション
     for (i=0; i<i2copt_len; i++) {
         n += i2c_read(n, &i2copt[i], input_key);

@@ -93,9 +93,11 @@
 #define  RAPID_TRIGGER_DEFAULT  120
 
 // ホールセンサーのアナログ値読み取り範囲デフォルト
-#define  HALL_RANGE_MIN_DEFAULT -50;
-#define  HALL_RANGE_MAX_DEFAULT 1200;
+#define  HALL_RANGE_MIN_DEFAULT -50
+#define  HALL_RANGE_MAX_DEFAULT 1200
 
+// シリアル通信で入力されたキーのステータス(16ビット×16＝0～255キー)
+#define  SERIAL_INPUT_MAX  16
 
 
 // 今押されているボタンの情報
@@ -322,6 +324,7 @@ class AzCommon
         void set_boot_mode(int set_mode); // 起動モードを切り替えてEEPROMに保存
         void change_mode(int set_mode); // モードを切り替えて再起動
         int i2c_read(int p, i2c_option *opt, char *read_data); // I2C機器のキー状態を取得
+        void serial_read(); // シリアル通信(赤外線)読み込み
         int nubkey_read(int p, nubkey_option *opt, char *read_data); // Nubkeyのキー状態を取得
         void nubkey_position_init(); // Nubkey ポジション設定情報初期化
         void nubkey_position_read(nubkey_option *opt); // Nubkey ポジション設定中動作
@@ -392,6 +395,7 @@ extern short *touch_list;
 extern short *hall_list;
 extern short *hall_offset;
 
+// 入力ピン情報 I2C
 extern short ioxp_sda;
 extern short ioxp_scl;
 extern int ioxp_hz;
@@ -401,6 +405,14 @@ extern int ioxp_hash[8];
 // I2Cオプションの設定
 extern i2c_option *i2copt;
 extern short i2copt_len;
+
+// 入力ピン情報 シリアル通信(赤外線)
+extern short seri_tx;
+extern short seri_rx;
+extern int seri_hz;
+
+// シリアル通信（赤外線）設定
+extern uint16_t seri_input[SERIAL_INPUT_MAX];
 
 // Nubkey 設定
 extern nubkey_option *nubopt;
