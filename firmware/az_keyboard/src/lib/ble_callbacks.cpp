@@ -930,6 +930,22 @@ void HidrawCallbackExec(int data_length) {
 			for (i=2; i<32; i++) send_buf[i] = 0x00;
 			return;
 		}
+		case id_get_serial_input {
+			// シリアル通信(赤外線)のキー入力取得
+			send_buf[0] = id_get_serial_input;
+			p = 1;
+			for (i=0; i<256; i++) {
+				s = i / 16;
+				x = i % 16;
+				if (seri_input[s] & (0x01 << x)) {
+					send_buf[p] = i;
+					p++;
+				}
+				if (p >=32) break;
+			}
+			for (i=p; i<32; i++) send_buf[i] = 0x00;
+			return;
+		}
 		case id_get_firmware_status: {
 			// ファームウェアステータス取得
 			sprintf((char *)send_buf, "%c%s-%s", id_get_firmware_status, FIRMWARE_VERSION, EEP_DATA_VERSION);

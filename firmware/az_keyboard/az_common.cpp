@@ -1891,9 +1891,26 @@ int AzCommon::i2c_read(int p, i2c_option *opt, char *read_data) {
 
 // シリアル通信(赤外線)読み込み
 void AzCommon::serial_read() {
+  uint8_t read_command;
   uint8_t read_buf;
+  int i, j;
   if(Serial2.available()){ //Serial2に受信データがあるか
     read_buf = Serial2.read(); //Serial2データを読み出し
+    if (read_command == 84) {
+        // キーが押された
+        read_buf = Serial2.read(); // 押されたキー取得
+        i = read_buf / 16;
+        j = read_buf % 16;
+        seri_input[i] = seri_input[i] | (0x01 << j);
+
+    } else if (read_command == 85) {
+        // キーが離された
+        read_buf = Serial2.read(); // 離されたキー取得
+        i = read_buf / 16;
+        j = read_buf % 16;
+        seri_input[i] &= ~(0x01 << j);
+
+    }
   }
 }
 
@@ -2197,7 +2214,9 @@ void AzCommon::key_read(void) {
         n += nubkey_read(n, &nubopt[i], input_key);
     }
     // シリアル通信(赤外線)読み込み
-    serial_read();
+    if ((seri_tx >= 0 || seri_rx >= 0) && seri_hz > 0 ) {
+        serial_read();
+    }
     // I2Cオプション
     for (i=0; i<i2copt_len; i++) {
         n += i2c_read(n, &i2copt[i], input_key);
