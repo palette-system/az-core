@@ -158,10 +158,11 @@ short i2copt_len;
 // 入力ピン情報 シリアル通信(赤外線)
 short seri_tx;
 short seri_rx;
-int seri_hz;
+short seri_hz;
 
 // シリアル通信（赤外線）設定
 uint16_t seri_input[SERIAL_INPUT_MAX];
+uint8_t seri_cmd;
 
 // Nubkey の設定
 nubkey_option *nubopt;
@@ -921,6 +922,9 @@ void AzCommon::load_setting_json() {
                 }
                 j++;
 
+            } else if (opt_type == 7) { // 7 = シリアル通信(赤外線)
+                j++;
+
             }
 
         }
@@ -1524,12 +1528,13 @@ void AzCommon::pin_setup() {
 
     // シリアル通信(赤外線)初期化
     if ((seri_tx >= 0 || seri_rx >= 0) && seri_hz > 0 ) {
-        Serial2.begin(seri_hz, SERIAL_8N1, seri_tx, seri_rx);
+        Serial.begin(seri_hz, SERIAL_8N1, seri_tx, seri_rx); // Serial2
     }
     // シリアル通信(赤外線)入力データの初期化
     for (i=0; i<SERIAL_INPUT_MAX; i++) {
-        seri_input[SERIAL_INPUT_MAX] = 0;
+        seri_input[i] = 0;
     }
+    seri_cmd = 0;
     
 
     // 動作電圧チェック用ピン
@@ -1869,8 +1874,10 @@ int AzCommon::i2c_read(int p, i2c_option *opt, char *read_data) {
     } else if (opt->opt_type == 7) {
         // シリアル通信(赤外線)
         // シリアル通信時に更新してる入力ステータスをそのまま持ってくるだけ
+        memcpy(&i2cmap_obj, opt->i2cmap, sizeof(i2c_map));
         memcpy(&read_raw, &seri_input, sizeof(seri_input));
-        e = 16;
+        e = SERIAL_INPUT_MAX;
+        read_data_bit = 16;
 
     }
     // 読み込んだデータからキー入力を取得
@@ -1891,27 +1898,32 @@ int AzCommon::i2c_read(int p, i2c_option *opt, char *read_data) {
 
 // シリアル通信(赤外線)読み込み
 void AzCommon::serial_read() {
-  uint8_t read_command;
   uint8_t read_buf;
   int i, j;
-  if(Serial2.available()){ //Serial2に受信データがあるか
-    read_buf = Serial2.read(); //Serial2データを読み出し
-    if (read_command == 84) {
+  while (Serial.available()) { // Serial2に受信データがあるか
+    read_buf = Serial.read(); // Serial2データを読み出し
+    if (seri_cmd == 0) {
+        // 1 バイト目はコマンドとして受け取る（存在しないコマンドを受け取った場合は無視）
+        if (read_buf == 84 || read_buf == 85) {
+            seri_cmd = read_buf;
+        }
+    } else if (seri_cmd == 84) {
         // キーが押された
-        read_buf = Serial2.read(); // 押されたキー取得
         i = read_buf / 16;
         j = read_buf % 16;
         seri_input[i] = seri_input[i] | (0x01 << j);
+        seri_cmd = 0;
 
-    } else if (read_command == 85) {
+    } else if (seri_cmd == 85) {
         // キーが離された
-        read_buf = Serial2.read(); // 離されたキー取得
         i = read_buf / 16;
         j = read_buf % 16;
         seri_input[i] &= ~(0x01 << j);
+        seri_cmd = 0;
 
     }
   }
+
 }
 
 // Nubkey 読み込み

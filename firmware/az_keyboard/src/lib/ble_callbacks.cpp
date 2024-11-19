@@ -930,7 +930,7 @@ void HidrawCallbackExec(int data_length) {
 			for (i=2; i<32; i++) send_buf[i] = 0x00;
 			return;
 		}
-		case id_get_serial_input {
+		case id_get_serial_input: {
 			// シリアル通信(赤外線)のキー入力取得
 			send_buf[0] = id_get_serial_input;
 			p = 1;

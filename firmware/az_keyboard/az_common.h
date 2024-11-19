@@ -409,10 +409,11 @@ extern short i2copt_len;
 // 入力ピン情報 シリアル通信(赤外線)
 extern short seri_tx;
 extern short seri_rx;
-extern int seri_hz;
+extern short seri_hz;
 
-// シリアル通信（赤外線）設定
+// シリアル通信（赤外線）入力ステータス
 extern uint16_t seri_input[SERIAL_INPUT_MAX];
+extern uint8_t seri_cmd;
 
 // Nubkey 設定
 extern nubkey_option *nubopt;
