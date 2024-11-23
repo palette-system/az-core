@@ -12,6 +12,7 @@
 #include <WiFi.h>
 #include <WiFiMulti.h>
 #include <HTTPClient.h>
+#include <SoftwareSerial.h>
 #include <Wire.h>
 #include <Adafruit_SSD1306.h> 
 #include <Adafruit_NeoPixel.h>

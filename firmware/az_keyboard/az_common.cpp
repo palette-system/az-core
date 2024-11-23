@@ -2,7 +2,6 @@
 #include "az_common.h"
 #include "src/lib/cnc_table.h"
 
-
 // remap用 キー入力テスト中フラグ
 uint16_t  remap_input_test;
 
@@ -65,6 +64,9 @@ short oled_main_addr = -1;
 
 // I2Cライブラリ用クラス
 Wirelib wirelib_cls = Wirelib();
+
+// シリアル通信(赤外線)ライブラリクラス
+SoftwareSerial mySerial;
 
 //timer オブジェクト
 hw_timer_t *timer = NULL;
@@ -1528,7 +1530,7 @@ void AzCommon::pin_setup() {
 
     // シリアル通信(赤外線)初期化
     if ((seri_tx >= 0 || seri_rx >= 0) && seri_hz > 0 ) {
-        Serial.begin(seri_hz, SERIAL_8N1, seri_tx, seri_rx); // Serial2
+        mySerial.begin(seri_hz, SWSERIAL_8N1, seri_tx, seri_rx , false, 256);
     }
     // シリアル通信(赤外線)入力データの初期化
     for (i=0; i<SERIAL_INPUT_MAX; i++) {
@@ -1900,8 +1902,8 @@ int AzCommon::i2c_read(int p, i2c_option *opt, char *read_data) {
 void AzCommon::serial_read() {
   uint8_t read_buf;
   int i, j;
-  while (Serial.available()) { // Serial2に受信データがあるか
-    read_buf = Serial.read(); // Serial2データを読み出し
+  while (mySerial.available()) { // mySerialに受信データがあるか
+    read_buf = mySerial.read(); // mySerialデータを読み出し
     if (seri_cmd == 0) {
         // 1 バイト目はコマンドとして受け取る（存在しないコマンドを受け取った場合は無視）
         if (read_buf == 84 || read_buf == 85) {
