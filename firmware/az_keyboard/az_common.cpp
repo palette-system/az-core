@@ -161,10 +161,13 @@ short i2copt_len;
 short seri_tx;
 short seri_rx;
 short seri_hz;
+bool seri_logic;
 
 // シリアル通信（赤外線）設定
 uint16_t seri_input[SERIAL_INPUT_MAX];
 uint8_t seri_cmd;
+uint8_t seri_buf[4];
+uint8_t seri_index;
 
 // Nubkey の設定
 nubkey_option *nubopt;
@@ -313,6 +316,7 @@ void AzCommon::common_start() {
     seri_tx = -1;
     seri_rx = -1;
     seri_hz = 1200;
+    seri_logic = false;
     // ioエキスパンダフラグ
     for (i=0; i<8; i++) {
       ioxp_status[i] = -1;
@@ -728,14 +732,20 @@ void AzCommon::load_setting_json() {
     }
 
     // シリアル通信(赤外線)ピン
-    if (setting_obj.containsKey("seri_set") && setting_obj["seri_set"].size() == 3) {
+    if (setting_obj.containsKey("seri_set") && setting_obj["seri_set"].size() == 4) {
         seri_tx = setting_obj["seri_set"][0].as<signed int>();
         seri_rx = setting_obj["seri_set"][1].as<signed int>();
         seri_hz = setting_obj["seri_set"][2].as<signed int>();
+        if (setting_obj["seri_set"][3].as<signed int>() == 0) {
+            seri_logic = false;
+        } else {
+            seri_logic = true;
+        }
     } else {
         seri_tx = -1;
         seri_rx = -1;
-        seri_hz = 1200;
+        seri_hz = 800;
+        seri_logic = false;
     }
 
     // I2cオプションの設定
@@ -1530,12 +1540,10 @@ void AzCommon::pin_setup() {
 
     // シリアル通信(赤外線)初期化
     if ((seri_tx >= 0 || seri_rx >= 0) && seri_hz > 0 ) {
-        mySerial.begin(seri_hz, SWSERIAL_8N1, seri_tx, seri_rx , false, 256);
+        mySerial.begin(seri_hz, SWSERIAL_8N1, seri_tx, seri_rx , seri_logic, 256);
     }
     // シリアル通信(赤外線)入力データの初期化
-    for (i=0; i<SERIAL_INPUT_MAX; i++) {
-        seri_input[i] = 0;
-    }
+    memset(&seri_input, 0x00, SERIAL_INPUT_MAX * 2);
     seri_cmd = 0;
     
 
@@ -1900,28 +1908,59 @@ int AzCommon::i2c_read(int p, i2c_option *opt, char *read_data) {
 
 // シリアル通信(赤外線)読み込み
 void AzCommon::serial_read() {
+  char px, py;
   uint8_t read_buf;
   int i, j;
   while (mySerial.available()) { // mySerialに受信データがあるか
     read_buf = mySerial.read(); // mySerialデータを読み出し
     if (seri_cmd == 0) {
         // 1 バイト目はコマンドとして受け取る（存在しないコマンドを受け取った場合は無視）
-        if (read_buf == 84 || read_buf == 85) {
+        if (read_buf >= 0xB0 && read_buf <= 0xB4) {
             seri_cmd = read_buf;
+            seri_index = 0;
         }
-    } else if (seri_cmd == 84) {
+    } else if (seri_cmd == 0xB0) {
         // キーが押された
         i = read_buf / 16;
         j = read_buf % 16;
         seri_input[i] = seri_input[i] | (0x01 << j);
         seri_cmd = 0;
 
-    } else if (seri_cmd == 85) {
+    } else if (seri_cmd == 0xB1) {
         // キーが離された
         i = read_buf / 16;
         j = read_buf % 16;
         seri_input[i] &= ~(0x01 << j);
         seri_cmd = 0;
+
+    } else if (seri_cmd == 0xB2) {
+        // 全てのキーが離された
+        memset(&seri_input, 0x00, SERIAL_INPUT_MAX * 2); // 入力を全てリセット
+        seri_cmd = 0;
+
+    } else if (seri_cmd == 0xB3) {
+        // マウス移動
+        if (seri_index == 0) {
+            seri_buf[0] = read_buf;
+        } else {
+            px = seri_buf[0];
+            py = read_buf;
+            press_mouse_list_push(0x2000, 5, px, py, 0, 0, 100);
+            seri_cmd = 0;
+        }
+        seri_index++;
+
+    } else if (seri_cmd == 0xB4) {
+        // マウスホイール移動
+        if (seri_index == 0) {
+            seri_buf[0] = read_buf;
+        } else {
+            px = seri_buf[0];
+            py = read_buf;
+            press_mouse_list_push(0x2000, 5, px, py, 0, 0, 100);
+            seri_cmd = 0;
+        }
+        seri_index++;
 
     }
   }
