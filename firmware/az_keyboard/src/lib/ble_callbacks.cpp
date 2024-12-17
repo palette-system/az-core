@@ -37,10 +37,9 @@ void CharacteristicCallbacks::onNotify(NimBLECharacteristic* pCharacteristic) {
     // Serial.println("Sending notification to clients");
 };
 
-void CharacteristicCallbacks::onStatus(NimBLECharacteristic* pCharacteristic, Status status, int code) {
+void CharacteristicCallbacks::onStatus(NimBLECharacteristic* pCharacteristic, int code) {
     String str = ("Notf/Ind stscode: ");
-    str += status;
-    str += ", retcode: ";
+    str += "retcode: ";
     str += code;
     str += ", "; 
     str += NimBLEUtils::returnCodeToString(code);
@@ -166,7 +165,7 @@ RemapOutputCallbacks::RemapOutputCallbacks(void) {
 void RemapOutputCallbacks::onWrite(NimBLECharacteristic* me) {
 	int i;
 	uint8_t* data = (uint8_t*)(me->getValue().c_str());
-	size_t data_length = me->getDataLength();
+	size_t data_length = me->getLength();
 	memcpy(remap_buf, data, data_length);
 
     // 省電力モードの場合解除
@@ -944,6 +943,15 @@ void HidrawCallbackExec(int data_length) {
 				if (p >=32) break;
 			}
 			for (i=p; i<32; i++) send_buf[i] = 0x00;
+			return;
+		}
+		case id_get_serial_setting: {
+			// シリアル通信(赤外線)のセッティング情報取得
+			send_buf[0] = id_get_serial_setting;
+			for (i=1; i<(sizeof(seri_setting)+1); i++) {
+				send_buf[i] = seri_setting[i-1];
+			}
+			while (i<32) { send_buf[i] = 0x00; i++; }
 			return;
 		}
 		case id_get_firmware_status: {

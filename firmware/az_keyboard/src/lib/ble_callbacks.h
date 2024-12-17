@@ -24,7 +24,7 @@ class CharacteristicCallbacks: public NimBLECharacteristicCallbacks {
     void onRead(NimBLECharacteristic* pCharacteristic);
     void onWrite(NimBLECharacteristic* pCharacteristic);
     void onNotify(NimBLECharacteristic* pCharacteristic);
-    void onStatus(NimBLECharacteristic* pCharacteristic, Status status, int code);
+    void onStatus(NimBLECharacteristic* pCharacteristic, int code);
     void onSubscribe(NimBLECharacteristic* pCharacteristic, ble_gap_conn_desc* desc, uint16_t subValue);
 };
 

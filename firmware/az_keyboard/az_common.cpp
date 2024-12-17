@@ -66,7 +66,7 @@ short oled_main_addr = -1;
 Wirelib wirelib_cls = Wirelib();
 
 // シリアル通信(赤外線)ライブラリクラス
-SoftwareSerial mySerial;
+SoftwareSerial irSerial;
 
 //timer オブジェクト
 hw_timer_t *timer = NULL;
@@ -166,8 +166,9 @@ bool seri_logic;
 // シリアル通信（赤外線）設定
 uint16_t seri_input[SERIAL_INPUT_MAX];
 uint8_t seri_cmd;
-uint8_t seri_buf[4];
+uint8_t seri_buf[12];
 uint8_t seri_index;
+uint8_t seri_setting[12];
 
 // Nubkey の設定
 nubkey_option *nubopt;
@@ -1540,10 +1541,12 @@ void AzCommon::pin_setup() {
 
     // シリアル通信(赤外線)初期化
     if ((seri_tx >= 0 || seri_rx >= 0) && seri_hz > 0 ) {
-        mySerial.begin(seri_hz, SWSERIAL_8N1, seri_tx, seri_rx , seri_logic, 256);
+        irSerial.begin(seri_hz, SWSERIAL_8N1, seri_tx, seri_rx , seri_logic, 256);
     }
     // シリアル通信(赤外線)入力データの初期化
-    memset(&seri_input, 0x00, SERIAL_INPUT_MAX * 2);
+    memset(&seri_input, 0x00, sizeof(seri_input));
+    memset(&seri_buf, 0x00, sizeof(seri_buf));
+    memset(&seri_setting, 0x00, sizeof(seri_setting));
     seri_cmd = 0;
     
 
@@ -1911,34 +1914,34 @@ void AzCommon::serial_read() {
   char px, py;
   uint8_t read_buf;
   int i, j;
-  while (mySerial.available()) { // mySerialに受信データがあるか
-    read_buf = mySerial.read(); // mySerialデータを読み出し
+  while (irSerial.available()) { // irSerialに受信データがあるか
+    read_buf = irSerial.read(); // irSerialデータを読み出し
     if (seri_cmd == 0) {
         // 1 バイト目はコマンドとして受け取る（存在しないコマンドを受け取った場合は無視）
-        if (read_buf >= 0xB0 && read_buf <= 0xB4) {
+        if (read_buf >= 0xB1 && read_buf <= 0xB6) {
             seri_cmd = read_buf;
             seri_index = 0;
         }
-    } else if (seri_cmd == 0xB0) {
+    } else if (seri_cmd == 0xB1) {
         // キーが押された
         i = read_buf / 16;
         j = read_buf % 16;
         seri_input[i] = seri_input[i] | (0x01 << j);
         seri_cmd = 0;
 
-    } else if (seri_cmd == 0xB1) {
+    } else if (seri_cmd == 0xB2) {
         // キーが離された
         i = read_buf / 16;
         j = read_buf % 16;
         seri_input[i] &= ~(0x01 << j);
         seri_cmd = 0;
 
-    } else if (seri_cmd == 0xB2) {
+    } else if (seri_cmd == 0xB3) {
         // 全てのキーが離された
         memset(&seri_input, 0x00, SERIAL_INPUT_MAX * 2); // 入力を全てリセット
         seri_cmd = 0;
 
-    } else if (seri_cmd == 0xB3) {
+    } else if (seri_cmd == 0xB4) {
         // マウス移動
         if (seri_index == 0) {
             seri_buf[0] = read_buf;
@@ -1950,7 +1953,7 @@ void AzCommon::serial_read() {
         }
         seri_index++;
 
-    } else if (seri_cmd == 0xB4) {
+    } else if (seri_cmd == 0xB5) {
         // マウスホイール移動
         if (seri_index == 0) {
             seri_buf[0] = read_buf;
@@ -1959,6 +1962,28 @@ void AzCommon::serial_read() {
             py = read_buf;
             press_mouse_list_push(0x2000, 5, px, py, 0, 0, 100);
             seri_cmd = 0;
+        }
+        seri_index++;
+
+    } else if (seri_cmd == 0xB6) {
+        // 設定情報受け取り
+        if (seri_index == 0) {
+            seri_buf[0] = read_buf; // どのフォーマットのデータか
+            if (seri_buf[0] != 0x01) { // 知らないフォーマットだった場合はコマンド読み込み終了
+                seri_cmd = 0;
+            }
+        } else {
+            if (seri_buf[0] == 0x01) {
+                // データタイプ1 (4バイトデータ読み込み)
+                if (seri_index < 3) { // 3バイト目まではバッファにためる
+                    seri_buf[seri_index] = read_buf;
+                } else if (seri_index >= 4) { // 4バイト目で処理
+                    seri_buf[seri_index] = read_buf;
+                    for (i=5; i<sizeof(seri_buf); i++) seri_buf[i] = 0x00;
+                    memcpy(&seri_setting, &seri_buf, sizeof(seri_buf));
+                    seri_cmd = 0;
+                }
+            }
         }
         seri_index++;
 
