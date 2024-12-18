@@ -419,6 +419,8 @@ extern uint8_t seri_cmd;
 extern uint8_t seri_buf[12];
 extern uint8_t seri_index;
 extern uint8_t seri_setting[12];
+extern uint8_t seri_up_buf[16];
+extern uint16_t seri_setting_del;
 
 // Nubkey 設定
 extern nubkey_option *nubopt;

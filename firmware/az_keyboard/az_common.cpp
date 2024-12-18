@@ -169,6 +169,8 @@ uint8_t seri_cmd;
 uint8_t seri_buf[12];
 uint8_t seri_index;
 uint8_t seri_setting[12];
+uint8_t seri_up_buf[16];
+uint16_t seri_setting_del;
 
 // Nubkey の設定
 nubkey_option *nubopt;
@@ -1547,7 +1549,10 @@ void AzCommon::pin_setup() {
     memset(&seri_input, 0x00, sizeof(seri_input));
     memset(&seri_buf, 0x00, sizeof(seri_buf));
     memset(&seri_setting, 0x00, sizeof(seri_setting));
+    memset(&seri_up_buf, 0x00, sizeof(seri_up_buf));
     seri_cmd = 0;
+    seri_setting_del = 0;
+    
     
 
     // 動作電圧チェック用ピン
@@ -1918,7 +1923,7 @@ void AzCommon::serial_read() {
     read_buf = irSerial.read(); // irSerialデータを読み出し
     if (seri_cmd == 0) {
         // 1 バイト目はコマンドとして受け取る（存在しないコマンドを受け取った場合は無視）
-        if (read_buf >= 0xB1 && read_buf <= 0xB6) {
+        if (read_buf >= 0xB1 && read_buf <= 0xB7) {
             seri_cmd = read_buf;
             seri_index = 0;
         }
@@ -1937,11 +1942,27 @@ void AzCommon::serial_read() {
         seri_cmd = 0;
 
     } else if (seri_cmd == 0xB3) {
+        // キーが押された＋離された(2サイクル後に離す)
+        i = read_buf / 16;
+        j = read_buf % 16;
+        seri_input[i] = seri_input[i] | (0x01 << j);
+        seri_cmd = 0;
+        // 離すバッファにキーを入れる
+        i = 2;
+        while (i<16) {
+            if (seri_up_buf[i] == 0) {
+                seri_up_buf[i] = read_buf;
+                break;
+            }
+            i++;
+        }
+
+    } else if (seri_cmd == 0xB4) {
         // 全てのキーが離された
         memset(&seri_input, 0x00, SERIAL_INPUT_MAX * 2); // 入力を全てリセット
         seri_cmd = 0;
 
-    } else if (seri_cmd == 0xB4) {
+    } else if (seri_cmd == 0xB5) {
         // マウス移動
         if (seri_index == 0) {
             seri_buf[0] = read_buf;
@@ -1953,7 +1974,7 @@ void AzCommon::serial_read() {
         }
         seri_index++;
 
-    } else if (seri_cmd == 0xB5) {
+    } else if (seri_cmd == 0xB6) {
         // マウスホイール移動
         if (seri_index == 0) {
             seri_buf[0] = read_buf;
@@ -1965,7 +1986,7 @@ void AzCommon::serial_read() {
         }
         seri_index++;
 
-    } else if (seri_cmd == 0xB6) {
+    } else if (seri_cmd == 0xB7) {
         // 設定情報受け取り
         if (seri_index == 0) {
             seri_buf[0] = read_buf; // どのフォーマットのデータか
@@ -1977,16 +1998,33 @@ void AzCommon::serial_read() {
                 // データタイプ1 (4バイトデータ読み込み)
                 if (seri_index < 3) { // 3バイト目まではバッファにためる
                     seri_buf[seri_index] = read_buf;
-                } else if (seri_index >= 4) { // 4バイト目で処理
+                } else { // 4バイト目で処理
                     seri_buf[seri_index] = read_buf;
                     for (i=5; i<sizeof(seri_buf); i++) seri_buf[i] = 0x00;
                     memcpy(&seri_setting, &seri_buf, sizeof(seri_buf));
+                    seri_setting_del = 200;
                     seri_cmd = 0;
                 }
             }
         }
         seri_index++;
 
+    }
+  }
+  // 離すバッファにキーがあれば離す
+  if (seri_up_buf[0]) {
+    i = seri_up_buf[0] / 16;
+    j = seri_up_buf[0] % 16;
+    seri_input[i] &= ~(0x01 << j);
+  }
+  // 離すバッファを1バイトずつスライドしていく
+  for (i=0; i<15; i++) { seri_up_buf[i] = seri_up_buf[i+1]; }
+  seri_up_buf[15] = 0x00;
+  // 設定データ取得から5秒過ぎたら設定データ削除
+  if (seri_setting_del) {
+    seri_setting_del--;
+    if (!seri_setting_del) {
+        memset(&seri_setting, 0x00, sizeof(seri_setting));
     }
   }
 
