@@ -8,6 +8,7 @@
 #include "SPIFFS.h"
 #include "driver/adc.h"
 
+#include <esp_task_wdt.h>
 #include <ArduinoJson.h>
 #include <WiFi.h>
 #include <WiFiMulti.h>
@@ -261,7 +262,6 @@ struct setting_wifi {
     char *pass;
 };
 
-
 // ArduinoJSON SPRAM用の定義
 struct SpiRamAllocator {
     void* allocate(size_t size) {
@@ -294,6 +294,7 @@ class AzCommon
     public:
         AzCommon();   // コンストラクタ
         void common_start(); // 共通処理の初期処理(setup時に呼ばれる)
+        void esp_restart(); // ESP32再起動
         int split(String data, char delimiter, String *dst); // 区切り文字で分割する
         void set_status_led_timer(); // ステータスLED点滅タイマー登録
         void set_status_rgb_loop(); // RGBステータスループ開始
@@ -323,7 +324,7 @@ class AzCommon
         void load_file_data(char *file_path, uint8_t *load_point, uint16_t load_size); // ファイルから設定値を読み込み
         void save_file_data(char *file_path, uint8_t *save_point, uint16_t save_size); // ファイルに設定値を書込み
         void set_boot_mode(int set_mode); // 起動モードを切り替えてEEPROMに保存
-        void change_mode(int set_mode); // モードを切り替えて再起動
+        void change_mode(int set_mode); // モードを切り替え
         int i2c_read(int p, i2c_option *opt, char *read_data); // I2C機器のキー状態を取得
         void serial_read(); // シリアル通信(赤外線)読み込み
         int nubkey_read(int p, nubkey_option *opt, char *read_data); // Nubkeyのキー状態を取得
@@ -524,7 +525,11 @@ extern int8_t *key_matrix;
 extern uint8_t led_num_length;
 extern uint8_t key_matrix_length;
 
+// 再起動用のWDT設定
+extern esp_task_wdt_config_t twdt_restart_config;
+
 // ハッシュ値計算用
 int azcrc32(uint8_t* d, int len);
+
 
 #endif

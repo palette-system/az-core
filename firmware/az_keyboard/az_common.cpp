@@ -180,6 +180,12 @@ int8_t nubkey_status;
 // 動作電圧チェック用ピン
 int8_t power_read_pin; // 電圧を読み込むピン
 
+// 再起動用のWDT設定
+esp_task_wdt_config_t twdt_restart_config = {
+    .timeout_ms = 100, // 再起動までにかける時間
+    .idle_core_mask = (1 << CONFIG_FREERTOS_NUMBER_OF_CORES) - 1,    // Bitmask of all cores
+    .trigger_panic = true,
+};
 
 // ステータス用LED点滅
 void IRAM_ATTR status_led_write() {
@@ -336,6 +342,13 @@ void AzCommon::common_start() {
     keyboard_status = 0;
     // RGBLEDのステータス
     status_led_mode_last = -1;
+}
+
+// ESP32 再起動
+void AzCommon::esp_restart() {
+    esp_task_wdt_init(&twdt_restart_config); // WDTを設定
+    esp_task_wdt_add(NULL); // WDTの開始
+    while (true) { delay(1000); } // WDTで再起動されるまでなにもしない
 }
 
 
@@ -1739,10 +1752,9 @@ void AzCommon::set_boot_mode(int set_mode) {
     save_data();
 }
 
-// モードを切り替えて再起動
+// モードを切り替え
 void AzCommon::change_mode(int set_mode) {
     set_boot_mode(set_mode);
-    ESP.restart(); // ESP32再起動
 }
 
 int AzCommon::i2c_read(int p, i2c_option *opt, char *read_data) {

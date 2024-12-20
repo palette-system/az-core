@@ -16,8 +16,6 @@ CustomHIDDevice bleKeyboard = CustomHIDDevice();
 BleKeyboardJIS bleKeyboard = BleKeyboardJIS();
 #endif
 
-
-
 // 暗記ボタンクラス
 Ankey ankeycls = Ankey();
 
@@ -745,6 +743,12 @@ void AzKeyboard::loop_exec(void) {
         // 現在のキーの状態を前回部分にコピー
         common_cls.key_old_copy();
         delay(5);
+    }
+
+    // キーボードリスタート要求を受け取った
+    if (aztool_mode_flag == 3) {
+        bleKeyboard.end(); // HID 終了処理
+        common_cls.esp_restart(); // ESP32 再起動
     }
 
     delay(5);

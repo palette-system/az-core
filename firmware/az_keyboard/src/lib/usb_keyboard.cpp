@@ -58,6 +58,12 @@ void CustomHIDDevice::begin(std::string deviceName, std::string deviceManufactur
     USB.begin();
 };
 
+// BLEキーボード終了
+void CustomHIDDevice::end(void)
+{
+    HID.end();
+};
+
 // HIDからreport_mapの要求
 uint16_t CustomHIDDevice::_onGetDescriptor(uint8_t* buffer){
     memcpy(buffer, _hidReportDescriptorDefault, sizeof(_hidReportDescriptorDefault));

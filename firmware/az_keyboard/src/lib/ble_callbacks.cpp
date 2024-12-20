@@ -614,8 +614,9 @@ void HidrawCallbackExec(int data_length) {
 		case id_restart: {
 			// M5StackCore2 の再起動
 		    m = remap_buf[1]; // 起動モード取得
-			common_cls.change_mode(m);
+			common_cls.change_mode(m); // 起動モードの切り替え
 			send_buf[0] = 0;
+			aztool_mode_flag = 3; // キーボードリスタート要求
 			return;
 
 		}
