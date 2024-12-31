@@ -65,7 +65,7 @@
 #define LOOP_DELAY_DEFAULT  5
 
 // ファームウェアのバージョン文字
-#define FIRMWARE_VERSION   "000119"
+#define FIRMWARE_VERSION   "000120"
 
 // EEPROMに保存しているデータのバージョン文字列
 #define EEP_DATA_VERSION    "AZC001"

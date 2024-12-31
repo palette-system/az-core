@@ -1,0 +1,28 @@
+{
+	"ap": {
+		"pass": ""
+	},
+	"wifi": [],
+	"vendorId": "0xe502",
+	"productId": "0x0204",
+	"led_num": [],
+	"key_matrix": [],
+	"keyboard_language": 0,
+	"keyboard_name": "azsensor",
+	"keyboard_type": "azsensor",
+	"keyboard_pin": {
+		"row": [],
+		"col": [],
+		"direct": [],
+		"touch": []
+	},
+	"i2c_set": [5, 6, 400000],
+	"seri_set": [9, -1, 800, 0],
+	"default_layer": 0,
+	"layers": {
+		"layer_0": {
+			"name": "レイヤー0",
+			"keys": {}
+		}
+	}
+}
