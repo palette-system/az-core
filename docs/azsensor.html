@@ -53,7 +53,8 @@ $(function(){
     <div class="content_body">
         <table cellpadding="10"><tr><td valign="top">
             </td><td valign="top">
-            下記サイトから「ESP-IDF Tools Installer」をダウンロードしてドライバのみをインストールして下さい。<br><br>
+            下記サイトから「ESP-IDF Tools Installer」をダウンロードしてドライバのみをインストールして下さい。<br>
+            ※ 既にESP32S3を使用したPCであれば不要です。<br><br>
             <a href="https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/get-started/windows-setup.html#get-started-windows-tools-installer" target="_blank" class="link_btn">ESP-IDF Tools Installer</a><br>
             <br>
             <img src="./img/driver_install.png">
@@ -65,7 +66,8 @@ $(function(){
     <h2>２．ファームウェアの書き込み</h2>
     <div class="content_body">
     
-    ESP32S3をPCに接続して下記の書き込みボタンをクリックしてください。<br><br>
+    ESP32S3をPCに接続して下記の書き込みボタンをクリックしてください。<br>
+    「Write Complated.」と表示されたら書き込み完了です。ESP32S3をPCから一度外して付け直すとキーボードAZSENSORとして認識されます。<br><br>
     <a id="write_firm" class="link_btn">AZSENSOR ファームウェア 書込み</a><br>
     <div id="write_info"></div>
     
