@@ -180,13 +180,6 @@ int8_t nubkey_status;
 // 動作電圧チェック用ピン
 int8_t power_read_pin; // 電圧を読み込むピン
 
-// 再起動用のWDT設定
-esp_task_wdt_config_t twdt_restart_config = {
-    .timeout_ms = 100, // 再起動までにかける時間
-    .idle_core_mask = (1 << CONFIG_FREERTOS_NUMBER_OF_CORES) - 1,    // Bitmask of all cores
-    .trigger_panic = true,
-};
-
 // ステータス用LED点滅
 void IRAM_ATTR status_led_write() {
     int set_bit;
@@ -333,7 +326,7 @@ void AzCommon::common_start() {
     }
     // マウスのスクロールボタンが押されているか
     mouse_scroll_flag = false;
-    if (AZ_DEBUG_MODE) Serial.begin(115200);
+    // if (AZ_DEBUG_MODE) Serial.begin(115200);
     // aztoolで作業中かどうか
     aztool_mode_flag = 0;
     // remap用 キー入力テスト中フラグ
@@ -346,9 +339,7 @@ void AzCommon::common_start() {
 
 // ESP32 再起動
 void AzCommon::esp_restart() {
-    esp_task_wdt_init(&twdt_restart_config); // WDTを設定
-    esp_task_wdt_add(NULL); // WDTの開始
-    while (true) { delay(1000); } // WDTで再起動されるまでなにもしない
+    ESP.restart();
 }
 
 

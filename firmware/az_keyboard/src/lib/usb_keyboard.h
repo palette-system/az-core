@@ -34,7 +34,6 @@ class CustomHIDDevice: public USBHIDDevice {
         uint8_t _MouseButtons; // マウスボタン情報
         CustomHIDDevice(void); // コンストラクタ
         void begin(std::string deviceName = "az_keyboard", std::string deviceManufacturer = "PaletteSystem");
-        void end(void);
         uint16_t _onGetDescriptor(uint8_t* buffer); // HIDからreport_mapの要求
         void _onOutput(uint8_t report_id, const uint8_t* buffer, uint16_t len); // HIDからデータを受け取る
         bool send(uint8_t * value); // キーデータ送信

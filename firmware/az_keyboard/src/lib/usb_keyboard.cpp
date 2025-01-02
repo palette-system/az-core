@@ -16,26 +16,26 @@ int raw_file_flag = 0; // はいたフラグ
 TaskHandle_t hidraw_send_task;
 
 static void usbEventCallback(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data){
-    Serial.printf("HID: eventBase %d  eventID %d \r\n", event_base, event_id);
+    // Serial.printf("HID: eventBase %d  eventID %d \r\n", event_base, event_id);
   if(event_base == ARDUINO_USB_EVENTS){
     arduino_usb_event_data_t * data = (arduino_usb_event_data_t*)event_data;
-    Serial.printf("ARDUINO_USB_EVENTS: eventBase %d \r\n", ARDUINO_USB_EVENTS);
+    // Serial.printf("ARDUINO_USB_EVENTS: eventBase %d \r\n", ARDUINO_USB_EVENTS);
     switch (event_id){
       // 0 USB 刺された
       case ARDUINO_USB_STARTED_EVENT:
-        Serial.println("USB PLUGGED");
+        // Serial.println("USB PLUGGED");
         usbhid_connected = true;
         break;
       // 1 USB 外した
       case ARDUINO_USB_STOPPED_EVENT:
-        Serial.println("USB UNPLUGGED");
+        // Serial.println("USB UNPLUGGED");
         usbhid_connected = false;
         break;
       case ARDUINO_USB_SUSPEND_EVENT:
-        Serial.printf("USB SUSPENDED: remote_wakeup_en: %u\n", data->suspend.remote_wakeup_en);
+        // Serial.printf("USB SUSPENDED: remote_wakeup_en: %u\n", data->suspend.remote_wakeup_en);
         break;
       case ARDUINO_USB_RESUME_EVENT:
-        Serial.println("USB RESUMED");
+        // Serial.println("USB RESUMED");
         break;
       
       default:
@@ -58,12 +58,6 @@ void CustomHIDDevice::begin(std::string deviceName, std::string deviceManufactur
     USB.begin();
 };
 
-// BLEキーボード終了
-void CustomHIDDevice::end(void)
-{
-    HID.end();
-};
-
 // HIDからreport_mapの要求
 uint16_t CustomHIDDevice::_onGetDescriptor(uint8_t* buffer){
     memcpy(buffer, _hidReportDescriptorDefault, sizeof(_hidReportDescriptorDefault));
@@ -75,13 +69,13 @@ void CustomHIDDevice::_onOutput(uint8_t report_id, const uint8_t* buffer, uint16
     int i;
     // Serial.printf("_onOutput: report_id %d / len %d\r\n", report_id, len);
     if (report_id == REPORT_KEYBOARD_ID) { // caps lockとか
-        Serial.printf("Keyboard status: %x\r\n", buffer[0]);
+        // Serial.printf("Keyboard status: %x\r\n", buffer[0]);
 
     } else if (report_id == INPUT_REP_REF_RAW_ID) { // HID Raw
         /*
-        Serial.printf("get: ");
-        for (i=0; i<len; i++) Serial.printf("%02x", buffer[i]);
-        Serial.printf("\r\n");
+        // Serial.printf("get: ");
+        // for (i=0; i<len; i++) Serial.printf("%02x", buffer[i]);
+        // Serial.printf("\r\n");
         */
         memcpy(remap_buf, buffer, len);
         if (remap_buf[0] == id_get_file_data) {
@@ -109,9 +103,9 @@ void CustomHIDDevice::_onOutput(uint8_t report_id, const uint8_t* buffer, uint16
           if (send_buf[0]) {
             HID.SendReport(INPUT_REP_REF_RAW_ID, send_buf, len);
             /*
-            Serial.printf("put: ");
-            for (i=0; i<len; i++) Serial.printf("%02x", send_buf[i]);
-            Serial.printf("\r\n");
+            // Serial.printf("put: ");
+            // for (i=0; i<len; i++) Serial.printf("%02x", send_buf[i]);
+            // Serial.printf("\r\n");
             */
           }
         }
@@ -296,7 +290,7 @@ bool CustomHIDDevice::isConnected(void) {
     return usbhid_connected;
 };
 void CustomHIDDevice::mouse_move(signed char x, signed char y, signed char wheel, signed char hWheel) {
-    Serial.printf("mouse_move %d %d %d %d\r\n", x, y, wheel, hWheel);
+    // Serial.printf("mouse_move %d %d %d %d\r\n", x, y, wheel, hWheel);
     if (this->isConnected()) {
         uint8_t m[5];
         m[0] = this->_MouseButtons;
@@ -308,22 +302,22 @@ void CustomHIDDevice::mouse_move(signed char x, signed char y, signed char wheel
     }
 };
 void CustomHIDDevice::mouse_press(uint8_t b) {
-    Serial.printf("mouse_press %d\r\n", b);
+    // Serial.printf("mouse_press %d\r\n", b);
     this->_MouseButtons |= b;
     this->mouse_move(0,0,0,0);
 };
 void CustomHIDDevice::mouse_release(uint8_t b) {
-    Serial.printf("mouse_release %d\r\n", b);
+    // Serial.printf("mouse_release %d\r\n", b);
     this->_MouseButtons &= ~(b);
     this->mouse_move(0,0,0,0);
 };
 // 指定したキーだけ押す
 size_t CustomHIDDevice::press_set(uint8_t k) {
-    Serial.printf("press_set %d\r\n", k);
+    // Serial.printf("press_set %d\r\n", k);
     return 0;
 };
 size_t CustomHIDDevice::press_raw(unsigned short k) {
-  Serial.printf("press_raw %d\r\n", k);
+  // Serial.printf("press_raw %d\r\n", k);
   uint8_t i;
   unsigned short kk;
   // メディアキー
@@ -347,7 +341,7 @@ size_t CustomHIDDevice::press_raw(unsigned short k) {
   return 1;
 };
 size_t CustomHIDDevice::release_raw(unsigned short k) {
-    Serial.printf("release_raw %d\r\n", k);
+    // Serial.printf("release_raw %d\r\n", k);
   uint8_t i;
   unsigned short kk;
   // メディアキー
@@ -366,7 +360,7 @@ size_t CustomHIDDevice::release_raw(unsigned short k) {
   return 1;
 };
 void CustomHIDDevice::releaseAll(void) {
-    Serial.printf("releaseAll\r\n");
+    // Serial.printf("releaseAll\r\n");
   this->_keyReport.keys[0] = 0;
   this->_keyReport.keys[1] = 0;
   this->_keyReport.keys[2] = 0;
@@ -381,7 +375,7 @@ void CustomHIDDevice::releaseAll(void) {
 };
 // 省電力モード設定
 void CustomHIDDevice::setConnInterval(int interval_type) {
-    Serial.printf("setConnInterval %d\r\n", interval_type);
+    // Serial.printf("setConnInterval %d\r\n", interval_type);
 };
 
 

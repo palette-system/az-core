@@ -46,11 +46,6 @@ void BleKeyboardJIS::begin(std::string deviceName, std::string deviceManufacture
   xTaskCreate(this->taskServer, "server", 20000, (void *)this, 5, NULL); // BLE HID 開始処理
 };
 
-// BLEキーボード終了
-void BleKeyboardJIS::end(void)
-{
-};
-
 // 接続中かどうかを返す
 bool BleKeyboardJIS::isConnected(void)
 {

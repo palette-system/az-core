@@ -525,9 +525,6 @@ extern int8_t *key_matrix;
 extern uint8_t led_num_length;
 extern uint8_t key_matrix_length;
 
-// 再起動用のWDT設定
-extern esp_task_wdt_config_t twdt_restart_config;
-
 // ハッシュ値計算用
 int azcrc32(uint8_t* d, int len);
 

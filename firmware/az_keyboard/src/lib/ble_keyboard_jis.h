@@ -70,7 +70,6 @@ class BleKeyboardJIS
     BleKeyboardJIS(void); // コンストラクタ
     void set_report_map(uint8_t * report_map, unsigned short report_size);
     void begin(std::string deviceName = "az_keyboard", std::string deviceManufacturer = "PaletteSystem");
-    void end(void);
     bool isConnected(void);
     unsigned short modifiers_press(unsigned short k);
     unsigned short modifiers_release(unsigned short k);

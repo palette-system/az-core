@@ -27,6 +27,12 @@ Dakey dakeycls = Dakey();
 AzKeyboard::AzKeyboard() {
 }
 
+// キーボード初期化処理
+void AzKeyboard::begin_keyboard() {
+    // bluetoothキーボード開始
+    bleKeyboard.begin(keyboard_name_str);
+}
+
 // キーボードとして処理開始
 void AzKeyboard::start_keyboard() {
     // ステータスLED wifi接続中
@@ -37,12 +43,6 @@ void AzKeyboard::start_keyboard() {
     common_cls.wifi_connect();
     ESP_LOGD(LOG_TAG, "mmm: %D %D\n", heap_caps_get_free_size(MALLOC_CAP_32BIT), heap_caps_get_free_size(MALLOC_CAP_8BIT) );
     
-    // bluetoothキーボード開始
-    ESP_LOGD(LOG_TAG, "mmm: %D %D\n", heap_caps_get_free_size(MALLOC_CAP_32BIT), heap_caps_get_free_size(MALLOC_CAP_8BIT) );
-
-    bleKeyboard.begin(keyboard_name_str);
-    ESP_LOGD(LOG_TAG, "mmm: %D %D\n", heap_caps_get_free_size(MALLOC_CAP_32BIT), heap_caps_get_free_size(MALLOC_CAP_8BIT) );
-
     // ステータスLED点灯
     status_led_mode = 1;
 
@@ -747,7 +747,6 @@ void AzKeyboard::loop_exec(void) {
 
     // キーボードリスタート要求を受け取った
     if (aztool_mode_flag == 3) {
-        bleKeyboard.end(); // HID 終了処理
         common_cls.esp_restart(); // ESP32 再起動
     }
 
