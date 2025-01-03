@@ -1961,9 +1961,16 @@ void AzCommon::serial_read() {
         }
 
     } else if (seri_cmd == 0xB4) {
-        // 全てのキーが離された
-        memset(&seri_input, 0x00, SERIAL_INPUT_MAX * 2); // 入力を全てリセット
-        seri_cmd = 0;
+        // 指定した範囲のキーが離された
+        if (seri_index == 0) {
+            seri_buf[0] = read_buf; // 対象範囲 開始
+        } else {
+            for (i = seri_buf[0]; i < read_buf; i++) { // 範囲開始から範囲終了までループ
+                seri_input[(i/16)] &= ~(0x01 << (i % 16)); // 対象のキーを離す
+            }
+            seri_cmd = 0;
+        }
+        seri_index++;
 
     } else if (seri_cmd == 0xB5) {
         // マウス移動
