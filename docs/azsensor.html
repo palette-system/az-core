@@ -23,10 +23,10 @@
 $(function(){
     $("#write_firm").click(function() {
         azesp.write_firm([
-        {"address": 0x0000, "data": "./data/azsensor/az_keyboard.ino.bootloader.0.1.20.bin"},
-        {"address": 0x8000, "data": "./data/azsensor/az_keyboard.ino.partitions.0.1.20.bin"},
+        {"address": 0x0000, "data": "./data/azsensor/az_keyboard.ino.bootloader.0.1.20.bin?1"},
+        {"address": 0x8000, "data": "./data/azsensor/az_keyboard.ino.partitions.0.1.20.bin?1"},
         {"address": 0xe000, "data": "./data/boot_app0.bin"},
-        {"address": 0x10000, "data": "./data/azsensor/az_keyboard.ino.0.1.20.bin"}
+        {"address": 0x10000, "data": "./data/azsensor/az_keyboard.ino.0.1.20.bin?1"}
         ], 921600, "write_info");
     });
 
