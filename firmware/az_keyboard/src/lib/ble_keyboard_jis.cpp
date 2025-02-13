@@ -1,6 +1,7 @@
 #include "../../az_config.h"
 
 #if KEYBOARD_TYPE == 0
+// 0 = Nim BLE
 // 0x00 = ノーマルESP32
 
 #include <NimBLEDevice.h>
@@ -17,6 +18,231 @@
 static DescriptorCallbacks dscCallbacks;
 static CharacteristicCallbacks chrCallbacks;
 static RemapDescriptorCallbacks RemapDscCallbacks;
+
+
+/* ====================================================================================================================== */
+/** Characteristic コールバック クラス */
+/* ====================================================================================================================== */
+
+CharacteristicCallbacks::CharacteristicCallbacks(void) {
+};
+
+void CharacteristicCallbacks::onRead(NimBLECharacteristic* pCharacteristic){
+    // Serial.print(pCharacteristic->getUUID().toString().c_str());
+    // Serial.print(": onRead(), value: ");
+    // Serial.println(pCharacteristic->getValue().c_str());
+};
+
+void CharacteristicCallbacks::onWrite(NimBLECharacteristic* pCharacteristic) {
+    // Serial.print(pCharacteristic->getUUID().toString().c_str());
+    // Serial.print(": onWrite(), value: ");
+    // Serial.println(pCharacteristic->getValue().c_str());
+};
+
+void CharacteristicCallbacks::onNotify(NimBLECharacteristic* pCharacteristic) {
+    // Serial.println("Sending notification to clients");
+};
+
+void CharacteristicCallbacks::onStatus(NimBLECharacteristic* pCharacteristic, int code) {
+    String str = ("Notf/Ind stscode: ");
+    str += "retcode: ";
+    str += code;
+    str += ", "; 
+    str += NimBLEUtils::returnCodeToString(code);
+    //Serial.print(str);
+};
+
+void CharacteristicCallbacks::onSubscribe(NimBLECharacteristic* pCharacteristic, ble_gap_conn_desc* desc, uint16_t subValue) {
+    String str = "Client ID: ";
+    str += desc->conn_handle;
+    str += " Address: ";
+    str += std::string(NimBLEAddress(desc->peer_ota_addr)).c_str();
+    if(subValue == 0) {
+        str += " Unsubscribed to ";
+    }else if(subValue == 1) {
+        str += " Subscribed to notfications for ";
+    } else if(subValue == 2) {
+        str += " Subscribed to indications for ";
+    } else if(subValue == 3) {
+        str += " Subscribed to notifications and indications for ";
+    }
+    str += std::string(pCharacteristic->getUUID()).c_str();
+
+    // Serial.println(str);
+};
+
+/* ====================================================================================================================== */
+/** Descriptor コールバック クラス */
+/* ====================================================================================================================== */
+
+DescriptorCallbacks::DescriptorCallbacks(void) {
+};
+
+void DescriptorCallbacks::onWrite(NimBLEDescriptor* pDescriptor) {
+    // std::string dscVal((char*)pDescriptor->getValue(), pDescriptor->getLength());
+    // Serial.print("Descriptor witten value:");
+    // Serial.println(dscVal.c_str());
+};
+
+void DescriptorCallbacks::onRead(NimBLEDescriptor* pDescriptor) {
+    // Serial.print(pDescriptor->getUUID().toString().c_str());
+    // Serial.println(" Descriptor read");
+};
+
+/* ====================================================================================================================== */
+/** コネクションクラス */
+/* ====================================================================================================================== */
+
+BleConnectionStatus::BleConnectionStatus(void) {
+};
+
+void BleConnectionStatus::onConnect(NimBLEServer* pServer, ble_gap_conn_desc* desc)
+{
+  keyboard_status = 1;
+  this->connected = true;
+  hid_conn_handle = desc->conn_handle;
+  if (hid_power_saving_mode == 1) {
+	pServer->updateConnParams(desc->conn_handle, hid_interval_normal - 2, hid_interval_normal + 2, 0, 60);
+    hid_power_saving_state = 0; // 通常モード
+    hid_state_change_time = millis();
+  }
+};
+
+void BleConnectionStatus::onDisconnect(NimBLEServer* pServer, ble_gap_conn_desc* desc)
+{
+  keyboard_status = 0;
+  this->connected = false;
+  hid_conn_handle = 0;
+};
+
+/* ====================================================================================================================== */
+/** Output コールバック クラス */
+/* ====================================================================================================================== */
+
+KeyboardOutputCallbacks::KeyboardOutputCallbacks(void) {
+}
+
+void KeyboardOutputCallbacks::onWrite(NimBLECharacteristic* me) {
+  uint8_t* value = (uint8_t*)(me->getValue().c_str());
+  ESP_LOGI(LOG_TAG, "special keys: %d", *value);
+}
+
+
+/* ====================================================================================================================== */
+/** Remap Descriptor コールバック クラス */
+/* ====================================================================================================================== */
+
+RemapDescriptorCallbacks::RemapDescriptorCallbacks(void) {
+};
+
+void RemapDescriptorCallbacks::onWrite(NimBLEDescriptor* pDescriptor) {
+    // std::string dscVal((char*)pDescriptor->getValue(), pDescriptor->getLength());
+    // Serial.print("RemapDescriptorCallbacks: onWrite: ");
+    // Serial.println(dscVal.c_str());
+};
+
+void RemapDescriptorCallbacks::onRead(NimBLEDescriptor* pDescriptor) {
+    // Serial.print("RemapDescriptorCallbacks: onRead: ");
+    // Serial.println(pDescriptor->getUUID().toString().c_str());
+};
+
+
+/* ====================================================================================================================== */
+/** Remap Output コールバック クラス */
+/* ====================================================================================================================== */
+
+
+RemapOutputCallbacks::RemapOutputCallbacks(void) {
+	remap_change_flag = 0;
+}
+
+
+void RemapOutputCallbacks::onWrite(NimBLECharacteristic* me) {
+	int i;
+	uint8_t* data = (uint8_t*)(me->getValue().c_str());
+	size_t data_length = me->getLength();
+	memcpy(remap_buf, data, data_length);
+
+    // 省電力モードの場合解除
+    if (hid_power_saving_mode == 1 && hid_power_saving_state == 1) { // 省電力モードON で、現在の動作モードが省電力
+        hid_power_saving_state = 2;
+    }
+
+    /* REMAP から受け取ったデータデバッグ表示
+	Serial.printf("get: (%d) ", data_length);
+	for (i=0; i<data_length; i++) {
+		Serial.printf("%02x ", remap_buf[i]);
+	}
+	Serial.printf("\n");
+	*/
+    if (remap_buf[0] == id_get_file_data) {
+		// 0x31 ファイルデータ要求
+		int s, p, h, l, m, j;
+		// 情報を取得
+		s = remap_buf[1]; // ステップ数
+		p = (remap_buf[2] << 16) + (remap_buf[3] << 8) + remap_buf[4]; // 読み込み開始位置
+		h = (remap_buf[5] << 24) + (remap_buf[6] << 16) + (remap_buf[7] << 8) + remap_buf[8]; // ハッシュ値
+		if (h != 0) {
+			l = s * (data_length - 4); // ステップ数 x 1コマンドで送るデータ数
+			m = azcrc32(&save_file_data[p - l], l); // 前回送った所のハッシュを計算
+			if (h != m) { // ハッシュ値が違えば前に送った所をもう一回送る
+				// Serial.printf("NG : [%d %d] [ %d -> %d ]\n", h, m, p, (p - l));
+				p = p - l;
+			}
+		}
+		j = 0;
+		for (j=0; j<s; j++) {
+			send_buf[0] = id_get_file_data;
+			send_buf[1] = ((p >> 16) & 0xff);
+			send_buf[2] = ((p >> 8) & 0xff);
+			send_buf[3] = (p & 0xff);
+			i = 4;
+			while (p < save_file_length) {
+				send_buf[i] = save_file_data[p];
+				i++;
+				p++;
+				if (i >= 32) break;
+			}
+			while (i<32) {
+				send_buf[i] = 0x00;
+				i++;
+			}
+			this->sendRawData(send_buf, 32);
+			if (p >= save_file_length) break;
+
+		}
+		if (p >= save_file_length) {
+			// Serial.printf("free load: %d %d\n", save_file_length, heap_caps_get_free_size(MALLOC_CAP_INTERNAL));
+			free(save_file_data);
+		}
+
+	} else {
+		// それ以外は共通処理
+		HidrawCallbackExec(data_length);
+		// 返信データ送信
+		if (send_buf[0]) {
+			this->sendRawData(send_buf, data_length);
+		}
+	}
+
+
+    /*
+	Serial.printf("put: (%d) ", data_length);
+	for (i=0; i<data_length; i++) Serial.printf("%02x ", send_buf[i]);
+	Serial.printf("\n\n");
+	*/
+
+	
+}
+
+// Remapにデータを返す
+void RemapOutputCallbacks::sendRawData(uint8_t *data, uint8_t data_length) {
+	this->pInputCharacteristic->setValue(data, data_length);
+    this->pInputCharacteristic->notify();
+	// delay(1);
+}
+
+
 
 // コンストラクタ
 BleKeyboardJIS::BleKeyboardJIS(void)
@@ -153,7 +379,7 @@ void BleKeyboardJIS::taskServer(void* pvParameter)
     // remap Input
     bleKeyboardInstance->pInputCharacteristic4 = bleKeyboardInstance->pHidService->createCharacteristic("2A4D", NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY | NIMBLE_PROPERTY::READ_ENC | NIMBLE_PROPERTY::WRITE_ENC); // Report
     bleKeyboardInstance->pDesc5 = bleKeyboardInstance->pInputCharacteristic4->createDescriptor( "2908", NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY | NIMBLE_PROPERTY::READ_ENC | NIMBLE_PROPERTY::WRITE_ENC, 20); // Report Reference
-    uint8_t desc5_val[] = { INPUT_REP_REF_RAW_ID, 0x01 }; // Report ID 4 を Input に設定
+    uint8_t desc5_val[] = { REPORT_AZTOOL_ID, 0x01 }; // Report ID 4 を Input に設定
     bleKeyboardInstance->pDesc5->setValue((uint8_t*) desc5_val, 2);
     bleKeyboardInstance->pDesc5->setCallbacks(&RemapDscCallbacks);
 
@@ -164,7 +390,7 @@ void BleKeyboardJIS::taskServer(void* pvParameter)
     bleKeyboardInstance->pOutputCharacteristic2 = bleKeyboardInstance->pHidService->createCharacteristic("2A4D", NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::WRITE | NIMBLE_PROPERTY::WRITE_NR | NIMBLE_PROPERTY::READ_ENC | NIMBLE_PROPERTY::WRITE_ENC);
     bleKeyboardInstance->pOutputCharacteristic2->setCallbacks(remapOutputClass);
     bleKeyboardInstance->pDesc6 = bleKeyboardInstance->pOutputCharacteristic2->createDescriptor("2908", NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY | NIMBLE_PROPERTY::READ_ENC | NIMBLE_PROPERTY::WRITE_ENC, 20);
-    uint8_t desc6_val[] = { INPUT_REP_REF_RAW_ID, 0x02}; // Report ID 4 を Output に設定
+    uint8_t desc6_val[] = { REPORT_AZTOOL_ID, 0x02}; // Report ID 4 を Output に設定
     bleKeyboardInstance->pDesc6->setValue((uint8_t*) desc6_val, 2);
 
 

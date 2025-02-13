@@ -1,6 +1,6 @@
 #include "../../az_config.h"
 
-#if KEYBOARD_TYPE == 1
+#if KEYBOARD_TYPE == 2
 // 0x0009 = ESP32 S3
 
 #ifndef USBKeyboard_h

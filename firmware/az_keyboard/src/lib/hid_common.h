@@ -166,7 +166,7 @@ typedef uint8_t MediaKeyReport[2];
 #define REPORT_KEYBOARD_ID 0x01
 #define REPORT_MEDIA_KEYS_ID 0x02
 #define REPORT_MOUSE_ID 0x03
-#define INPUT_REP_REF_RAW_ID 0x04
+#define REPORT_AZTOOL_ID 0x04
 
 #define INPUT_REPORT_RAW_MAX_LEN 32
 #define OUTPUT_REPORT_RAW_MAX_LEN 32
@@ -296,7 +296,7 @@ const uint8_t _hidReportDescriptorDefault[] PROGMEM = {
         0x06, 0x60, 0xFF,
         0x09, 0x61,
         0xa1, 0x01,
-        0x85, INPUT_REP_REF_RAW_ID,
+        0x85, REPORT_AZTOOL_ID,
         
         0x09, 0x62, 
         0x15, 0x00, 

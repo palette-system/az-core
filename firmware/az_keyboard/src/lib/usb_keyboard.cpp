@@ -1,6 +1,7 @@
 #include "../../az_config.h"
 
-#if KEYBOARD_TYPE == 1
+#if KEYBOARD_TYPE == 2
+// 2 = USB Keyboard
 // 0x0009 = ESP32 S3
 
 #include "usb_keyboard.h"
@@ -71,7 +72,7 @@ void CustomHIDDevice::_onOutput(uint8_t report_id, const uint8_t* buffer, uint16
     if (report_id == REPORT_KEYBOARD_ID) { // caps lockとか
         // Serial.printf("Keyboard status: %x\r\n", buffer[0]);
 
-    } else if (report_id == INPUT_REP_REF_RAW_ID) { // HID Raw
+    } else if (report_id == REPORT_AZTOOL_ID) { // HID Raw
         /*
         // Serial.printf("get: ");
         // for (i=0; i<len; i++) Serial.printf("%02x", buffer[i]);
@@ -101,7 +102,7 @@ void CustomHIDDevice::_onOutput(uint8_t report_id, const uint8_t* buffer, uint16
           HidrawCallbackExec(len);
           // 返信データ送信
           if (send_buf[0]) {
-            HID.SendReport(INPUT_REP_REF_RAW_ID, send_buf, len);
+            HID.SendReport(REPORT_AZTOOL_ID, send_buf, len);
             /*
             // Serial.printf("put: ");
             // for (i=0; i<len; i++) Serial.printf("%02x", send_buf[i]);
@@ -137,7 +138,7 @@ static void raw_file_data(void* arg) {
         i++;
       }
       while (!HID.ready()) delay(10);
-      r = HID.SendReport(INPUT_REP_REF_RAW_ID, send_buf, raw_len);
+      r = HID.SendReport(REPORT_AZTOOL_ID, send_buf, raw_len);
       if (p >= save_file_length) break;
 
     }

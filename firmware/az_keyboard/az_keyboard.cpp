@@ -4,11 +4,18 @@
 #include "src/lib/ankey.h"
 #include "src/lib/dakey.h"
 
-#if KEYBOARD_TYPE == 1
+#if KEYBOARD_TYPE == 2
 // 有線キーボード
 #include "src/lib/usb_keyboard.h"
 // 有線キーボードクラス
 CustomHIDDevice bleKeyboard = CustomHIDDevice();
+
+#elif KEYBOARD_TYPE == 1
+// BLEキーボード
+#include "src/lib/c6_keyboard_jis.h"
+// BLEキーボードクラス
+BleKeyboardC6 bleKeyboard = BleKeyboardC6();
+
 #else
 // BLEキーボード
 #include "src/lib/ble_keyboard_jis.h"
@@ -30,7 +37,14 @@ AzKeyboard::AzKeyboard() {
 // キーボード初期化処理
 void AzKeyboard::begin_keyboard() {
     // bluetoothキーボード開始
+#if KEYBOARD_TYPE == 1
+    bleKeyboard.set_vendor_id(hid_vid);
+    bleKeyboard.set_product_id(hid_pid);
+    bleKeyboard.setName(keyboard_name_str);
+    bleKeyboard.begin();
+#else
     bleKeyboard.begin(keyboard_name_str);
+#endif
 }
 
 // キーボードとして処理開始
