@@ -166,10 +166,14 @@ void BleKeyboardC6::begin()
   onStarted(pServer);
 
   advertising = pServer->getAdvertising();
+  // https://github.com/espressif/arduino-esp32/blob/master/libraries/BLE/src/BLEHIDDevice.h
   advertising->setAppearance(HID_KEYBOARD);
   advertising->addServiceUUID(hid->hidService()->getUUID());
-  advertising->setMinInterval(0x20);
-  advertising->setMaxInterval(0x40);
+  // アドバタイジング間隔(Bluetooth機器を探す時の信号 指定値×0.625ミリ秒)
+  // デフォルト160(100ミリ秒)らしい
+  // https://reference.arduino.cc/reference/en/libraries/arduinoble/ble.setadvertisinginterval/
+  // advertising->setMinInterval(0x20); // 0x20
+  // advertising->setMaxInterval(0x40); // 0x40
   advertising->setScanResponse(true);
   // advertising->setScanResponse(false);
   // https://qiita.com/IRumA/items/00fc746892570f8d1c38
@@ -177,6 +181,10 @@ void BleKeyboardC6::begin()
   // advertising->setMinPreferred(0x12);
   advertising->start();
   hid->setBatteryLevel(batteryLevel);
+
+  // データ通信のインターバル設定
+  // pServer->updateConnParams(hid_conn_handle, 100, 120, 0, 200);
+
 
   ESP_LOGD(LOG_TAG, "Advertising started!");
 }
@@ -393,7 +401,7 @@ size_t BleKeyboardC6::write(const uint8_t *buffer, size_t size) {
 	return n;
 }
 
-void BleKeyboardC6::onConnect(BLEServer* pServer) {
+void BleKeyboardC6::onConnect(BLEServer* pServer, esp_ble_gatts_cb_param_t *param) {
   this->connected = true;
 
   BLE2902* desc = (BLE2902*)this->inputKeyboard->getDescriptorByUUID(BLEUUID((uint16_t)0x2902));
@@ -405,9 +413,22 @@ void BleKeyboardC6::onConnect(BLEServer* pServer) {
   desc = (BLE2902*)this->inputAztool->getDescriptorByUUID(BLEUUID((uint16_t)0x2902));
   desc->setNotifications(true);
 
+  /*
+  // データ同期をとるインターバル設定
+  // https://ambidata.io/samples/m5stack/m5stack_ble_sensor/
+  esp_ble_conn_update_params_t conn_params = {0};
+  memcpy(conn_params.bda, param->connect.remote_bda, sizeof(esp_bd_addr_t));
+  conn_params.latency = 0;
+  conn_params.max_int = 0xF0;    // max_int = 0x20*1.25ms = 40ms
+  conn_params.min_int = 0xE0;    // min_int = 0x10*1.25ms = 20ms
+  conn_params.timeout = 400;     // timeout = 400*10ms = 4000ms
+  //start sent the update connection parameters to the peer device.
+  esp_ble_gap_update_conn_params(&conn_params);
+  */
+
 }
 
-void BleKeyboardC6::onDisconnect(BLEServer* pServer) {
+void BleKeyboardC6::onDisconnect(BLEServer* pServer, esp_ble_gatts_cb_param_t *param) {
   this->connected = false;
 
   BLE2902* desc = (BLE2902*)this->inputKeyboard->getDescriptorByUUID(BLEUUID((uint16_t)0x2902));
@@ -419,7 +440,7 @@ void BleKeyboardC6::onDisconnect(BLEServer* pServer) {
   desc = (BLE2902*)this->inputAztool->getDescriptorByUUID(BLEUUID((uint16_t)0x2902));
   desc->setNotifications(false);
 
-  advertising->start();
+  advertising->start(); // 再接続のためにもう一度Advertisingする
 
 }
 
