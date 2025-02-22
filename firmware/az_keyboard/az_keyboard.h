@@ -14,7 +14,9 @@ class AzKeyboard
         void loop_exec();         // キーボード定期処理
         void key_action_exec(); // ステータスが変更されたキーのアクションを実行する
         void key_repeat_exec(); // キー連打処理
+#if WIFI_FLAG == 1
         void send_webhook(char *jstr); // WEBフックを送信する
+#endif
         void send_string(char *send_char); // テキストを送信する
         void hold_press(int hold, int key_num); // hold キーを押す
         void key_down_action(int key_num, short press_type); // キーが押された時のアクション

@@ -50,7 +50,9 @@ void Dakey::save_dakey(uint8_t view_flag) {
 		return;
 	}
 	// WEB���猻�ݓ������擾
+#if WIFI_FLAG == 1
 	date_now = common_cls.send_webhook_simple("http://azkey.jp/api/date.php");
+#endif
 	// �t�@�C���ɏ�������
 	File fp;
 	sprintf(save_path, "/D_%06D", boot_count);

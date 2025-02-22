@@ -496,6 +496,7 @@ void HidrawCallbackExec(int data_length) {
 		}
 		case id_get_ap_list: {
 			// WIFI のアクセスポイントの一覧取得
+#if WIFI_FLAG == 1
 			keyboard_status = 2;
 			String apjson = common_cls.get_wifi_ap_list_json();
 			save_file_length = apjson.length();
@@ -509,6 +510,10 @@ void HidrawCallbackExec(int data_length) {
 			send_buf[4] = (save_file_length & 0xff);
 			for (i=5; i<32; i++) send_buf[i] = 0x00;
 			// this->sendRawData(send_buf, 32);
+#else
+			send_buf[0] = id_get_ap_list;
+			for (i=1; i<32; i++) send_buf[i] = 0x00;
+#endif
 			keyboard_status = 1;
 			return;
 

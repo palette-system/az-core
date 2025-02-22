@@ -72,7 +72,9 @@ SoftwareSerial irSerial;
 hw_timer_t *timer = NULL;
 
 // WIFI接続オブジェクト
+#if WIFI_FLAG == 1
 WiFiMulti wifiMulti;
+#endif
 
 // WIFI接続フラグ
 int wifi_conn_flag;
@@ -355,8 +357,11 @@ void AzCommon::set_status_rgb_loop() {
     xTaskCreatePinnedToCore(status_rgb_loop, "rgbloop", 2048, NULL, 20, NULL, 1);
 }
 
+#if WIFI_FLAG == 1
+
 // WIFI 接続
 void AzCommon::wifi_connect() {
+#if WIFI_FLAG == 1
     // WIFI 接続
     int i;
     if (wifi_data_length <= 0) {
@@ -386,6 +391,7 @@ void AzCommon::wifi_connect() {
     if (wifi_conn_flag) {
         ESP_LOGD(LOG_TAG, "wifi : connect OK!\r\n");
     }
+#endif // WIFI_FLAG == 1
 }
 
 // wifiアクセスポイントのリストをJSONで取得
@@ -555,6 +561,7 @@ String AzCommon::http_request(char *url, const JsonObject &prm) {
     }
 }
 
+#endif // #if WIFI_FLAG == 1
 
 
 // 区切り文字で分割する

@@ -53,9 +53,11 @@ void AzKeyboard::start_keyboard() {
     status_led_mode = 4;
 
     // Wifi 接続
+#if WIFI_FLAG == 1
     ESP_LOGD(LOG_TAG, "mmm: %D %D\n", heap_caps_get_free_size(MALLOC_CAP_32BIT), heap_caps_get_free_size(MALLOC_CAP_8BIT) );
     common_cls.wifi_connect();
     ESP_LOGD(LOG_TAG, "mmm: %D %D\n", heap_caps_get_free_size(MALLOC_CAP_32BIT), heap_caps_get_free_size(MALLOC_CAP_8BIT) );
+#endif // #if WIFI_FLAG == 1
     
     // ステータスLED点灯
     status_led_mode = 1;
@@ -281,6 +283,8 @@ void AzKeyboard::power_saving_loop() {
 }
 
 
+#if WIFI_FLAG == 1
+
 // WEBフックを送信する
 void AzKeyboard::send_webhook(char *jstr) {
     if (!wifi_conn_flag) {
@@ -296,6 +300,9 @@ void AzKeyboard::send_webhook(char *jstr) {
     send_string(res_char);
     ESP_LOGD(LOG_TAG, "mmm: %D %D\n", heap_caps_get_free_size(MALLOC_CAP_32BIT), heap_caps_get_free_size(MALLOC_CAP_8BIT) );
 }
+
+#endif // #if WIFI_FLAG == 1
+
 
 // テキスト入力
 void AzKeyboard::send_string(char *send_char) {
@@ -415,8 +422,10 @@ void AzKeyboard::key_down_action(int key_num, short press_type) {
 
     } else if (action_type == 4) {
         // webフック
+#if WIFI_FLAG == 1
         send_webhook(key_set.data);
-        
+#endif
+
     } else if (action_type == 5 || action_type == 10) {
         // 5.マウス移動  10.アナログマウス移動
         setting_mouse_move mouse_move_input;

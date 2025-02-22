@@ -10,9 +10,14 @@
 
 #include <esp_task_wdt.h>
 #include <ArduinoJson.h>
+
+#if WIFI_FLAG == 1
 #include <WiFi.h>
 #include <WiFiMulti.h>
 #include <HTTPClient.h>
+#include "src/lib/HTTPClient_my.h"
+#endif
+
 #include <SoftwareSerial.h>
 #include <Wire.h>
 #include <Adafruit_SSD1306.h> 
@@ -21,7 +26,6 @@
 
 #include "src/lib/oled.h"
 #include "src/lib/neopixel.h"
-#include "src/lib/HTTPClient_my.h"
 #include "src/lib/wirelib.h"
 
 // キーボード
@@ -301,10 +305,14 @@ class AzCommon
         void wifi_connect(); // WIFI接続
         String get_wifi_ap_list_json(); // wifiアクセスポイントのリストをJSONで取得
         void get_domain(char *url, char *domain_name); // URLからドメイン名だけ取得
+
+#if WIFI_FLAG == 1
         String send_webhook_simple(char *url); // 単純なGETリクエストのWEBフック
         String send_webhook_post_file(char *url, char *file_path); // POSTでファイルの内容を送信する
         String send_webhook(char *setting_data); // httpかhttpsか判断してリクエストを送信する
         String http_request(char *url, const JsonObject &prm); // httpリクエスト送信
+#endif // WIFI_FLAG == 1
+
         bool create_setting_json(); // デフォルトの設定json作成
         void load_setting_json(); // jsonデータロード
         void clear_keymap(); // キーマップ用に確保しているメモリを解放
@@ -441,7 +449,10 @@ extern Wirelib wirelib_cls;
 extern hw_timer_t *timer;
 
 // WIFI接続オブジェクト
+
+#if WIFI_FLAG == 1
 extern WiFiMulti wifiMulti;
+#endif
 
 // WIFI接続フラグ
 extern int wifi_conn_flag;
