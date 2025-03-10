@@ -1,0 +1,149 @@
+{
+    "ap": {"pass": ""},
+    "wifi": [],
+    "vendorId": "0xe502",
+    "productId": "0x0205",
+    "led_num": [],
+    "key_matrix": [],
+    "keyboard_language": 0,
+    "keyboard_name": "azpocket",
+    "keyboard_type": "azpocket",
+    "keyboard_pin": {
+        "direct": [2,17,18,19,20,21],
+        "touch": [],
+        "col": [],
+        "row": []
+    },
+    "status_pin": 15,
+    "i2c_set": [22,23,400000],
+    "default_layer": 0,
+    "layers": {
+        "layer_0": {
+            "name": "レイヤー0",
+            "keys": {
+                "key_0": {
+                    "press": {
+                        "action_type": "3",
+                        "key": [4],
+                        "layer": "1",
+                        "layer_type": "83"
+                    }
+                },
+                "key_1": {
+                    "press": {
+                        "action_type": 1,
+                        "key": [7]
+                    }
+                },
+                "key_2": {
+                    "press": {
+                        "action_type": 1,
+                        "key": [4]
+                    }
+                },
+                "key_4": {
+                    "press": {
+                        "action_type": 1,
+                        "key": [5]
+                    }
+                },
+                "key_3": {
+                    "press": {
+                        "action_type": 1,
+                        "key": [6]
+                    }
+                },
+                "key_5": {
+                    "press": {
+                        "action_type": 1,
+                        "key": [39]
+                    }
+                }
+            }
+        },
+        "layer_1": {
+            "name": "レイヤー1",
+            "keys": {
+                "key_2": {
+                    "press": {
+                        "action_type": 1,
+                        "key": [8]
+                    }
+                },
+                "key_4": {
+                    "press": {
+                        "action_type": 1,
+                        "key": [9]
+                    }
+                },
+                "key_3": {
+                    "press": {
+                        "action_type": 1,
+                        "key": [10]
+                    }
+                },
+                "key_1": {
+                    "press": {
+                        "action_type": 1,
+                        "key": [11]
+                    }
+                },
+                "key_0": {
+                    "press": {
+                        "action_type": "3",
+                        "layer": "2",
+                        "layer_type": "83"
+                    }
+                },
+                "key_5": {
+                    "press": {
+                        "action_type": 1,
+                        "key": [30]
+                    }
+                }
+            }
+        },
+        "layer_2": {
+            "name": "レイヤー2",
+            "keys": {
+                "key_2": {
+                    "press": {
+                        "action_type": 1,
+                        "key": [12]
+                    }
+                },
+                "key_4": {
+                    "press": {
+                        "action_type": 1,
+                        "key": [13]
+                    }
+                },
+                "key_3": {
+                    "press": {
+                        "action_type": 1,
+                        "key": [14]
+                    }
+                },
+                "key_1": {
+                    "press": {
+                        "action_type": 1,
+                        "key": [15]
+                    }
+                },
+                "key_5": {
+                    "press": {
+                        "action_type": 1,
+                        "key": [31]
+                    }
+                },
+                "key_0": {
+                    "press": {
+                        "action_type": "3",
+                        "layer": "0",
+                        "layer_type": "83"
+                    }
+                }
+            }
+        }
+    }
+}

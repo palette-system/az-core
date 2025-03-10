@@ -403,6 +403,7 @@ size_t BleKeyboardC6::write(const uint8_t *buffer, size_t size) {
 
 void BleKeyboardC6::onConnect(BLEServer* pServer, esp_ble_gatts_cb_param_t *param) {
   this->connected = true;
+  keyboard_status = 1;
 
   BLE2902* desc = (BLE2902*)this->inputKeyboard->getDescriptorByUUID(BLEUUID((uint16_t)0x2902));
   desc->setNotifications(true);
@@ -413,23 +414,22 @@ void BleKeyboardC6::onConnect(BLEServer* pServer, esp_ble_gatts_cb_param_t *para
   desc = (BLE2902*)this->inputAztool->getDescriptorByUUID(BLEUUID((uint16_t)0x2902));
   desc->setNotifications(true);
 
-  /*
   // データ同期をとるインターバル設定
   // https://ambidata.io/samples/m5stack/m5stack_ble_sensor/
   esp_ble_conn_update_params_t conn_params = {0};
   memcpy(conn_params.bda, param->connect.remote_bda, sizeof(esp_bd_addr_t));
   conn_params.latency = 0;
-  conn_params.max_int = 0xF0;    // max_int = 0x20*1.25ms = 40ms
-  conn_params.min_int = 0xE0;    // min_int = 0x10*1.25ms = 20ms
-  conn_params.timeout = 400;     // timeout = 400*10ms = 4000ms
+  conn_params.max_int = 0x20;    // max_int = 0x20*1.25ms = 40ms
+  conn_params.min_int = 0x10;    // min_int = 0x10*1.25ms = 20ms
+  conn_params.timeout = 6000;     // timeout = 400*10ms = 4000ms
   //start sent the update connection parameters to the peer device.
   esp_ble_gap_update_conn_params(&conn_params);
-  */
 
 }
 
 void BleKeyboardC6::onDisconnect(BLEServer* pServer, esp_ble_gatts_cb_param_t *param) {
   this->connected = false;
+  keyboard_status = 0;
 
   BLE2902* desc = (BLE2902*)this->inputKeyboard->getDescriptorByUUID(BLEUUID((uint16_t)0x2902));
   desc->setNotifications(false);

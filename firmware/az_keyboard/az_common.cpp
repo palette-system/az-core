@@ -41,15 +41,15 @@ int status_pin = -1;
 int status_led_bit = 0;
 
 // ステータスLED表示モード
-int8_t status_led_mode;
-int8_t status_led_mode_last;
+volatile int8_t status_led_mode;
+volatile int8_t status_led_mode_last;
 
 // M5Stamp ステータス RGB_LED ピン、オブジェクト
 int8_t status_rgb_pin;
 Adafruit_NeoPixel *status_rgb;
 
 // キーボードのステータス
-int8_t keyboard_status;
+volatile int8_t keyboard_status;
 
 // rgb_led制御用クラス
 Neopixel rgb_led_cls = Neopixel();
@@ -191,7 +191,14 @@ void IRAM_ATTR status_led_write() {
         set_bit = 0; // 消灯
 
     } else if (status_led_mode == 1) {
-        set_bit = 1; // 点灯
+        if (keyboard_status) {
+            // BLE接続中
+            set_bit = 0; // 点灯
+        } else {
+            // BLE未接続
+            set_bit = (status_led_bit % 10)? 0: 1; // 点滅
+
+        }
       
     } else if (status_led_mode == 2) {
         // 設定モード
@@ -347,7 +354,7 @@ void AzCommon::esp_restart() {
 
 // ステータスLEDチカ用タイマー登録
 void AzCommon::set_status_led_timer() {
-    timer = timerBegin(80); //timer=1us
+    timer = timerBegin(1000000); //timer=1us
     timerAttachInterrupt(timer, &status_led_write);
     timerAlarm(timer, 100000, true, 0); // 100ms
 }

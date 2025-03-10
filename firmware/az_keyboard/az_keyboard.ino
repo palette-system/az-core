@@ -19,7 +19,7 @@ void setup() {
     // ステータス表示用のLED初期化
     if (status_pin >= 0) {
         pinMode(status_pin, OUTPUT);
-        digitalWrite(status_pin, 0);
+        digitalWrite(status_pin, 1);
         status_led_mode = 0;
         common_cls.set_status_led_timer();
     }

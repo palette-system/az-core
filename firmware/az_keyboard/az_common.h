@@ -379,15 +379,15 @@ extern int status_pin;
 extern int status_led_bit;
 
 // ステータスLED表示モード
-extern int8_t status_led_mode;
-extern int8_t status_led_mode_last;
+extern volatile int8_t status_led_mode;
+extern volatile int8_t status_led_mode_last;
 
 // M5Stamp ステータス RGB_LED ピン、オブジェクト
 extern int8_t status_rgb_pin;
 extern Adafruit_NeoPixel *status_rgb;
 
 // キーボードのステータス
-extern int8_t keyboard_status;
+extern volatile int8_t keyboard_status;
 
 // IOエキスパンダオブジェクト
 extern Adafruit_MCP23X17 *ioxp_obj[8];
