@@ -372,6 +372,9 @@ extern uint16_t hid_interval_saving; // 省電力モード時のBLEインター�
 extern int hid_saving_time; // 省電力モードに入るまでの時間(ミリ秒)
 
 
+// 電源ピン番号
+extern int power_pin;
+
 // ステータスピン番号
 extern int status_pin;
 

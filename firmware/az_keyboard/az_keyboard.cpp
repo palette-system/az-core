@@ -4,6 +4,11 @@
 #include "src/lib/ankey.h"
 #include "src/lib/dakey.h"
 
+#include "esp_bt_main.h"
+#include "esp_bt.h"
+#include "esp_wifi.h"
+#include "driver/rtc_io.h"
+
 #if KEYBOARD_TYPE == 2
 // 有線キーボード
 #include "src/lib/usb_keyboard.h"
@@ -36,7 +41,7 @@ AzKeyboard::AzKeyboard() {
 
 // キーボード初期化処理
 void AzKeyboard::begin_keyboard() {
-    // bluetoothキーボード開始
+// bluetoothキーボード開始
 #if KEYBOARD_TYPE == 1
     bleKeyboard.set_vendor_id(hid_vid);
     bleKeyboard.set_product_id(hid_pid);
@@ -57,6 +62,8 @@ void AzKeyboard::start_keyboard() {
     ESP_LOGD(LOG_TAG, "mmm: %D %D\n", heap_caps_get_free_size(MALLOC_CAP_32BIT), heap_caps_get_free_size(MALLOC_CAP_8BIT) );
     common_cls.wifi_connect();
     ESP_LOGD(LOG_TAG, "mmm: %D %D\n", heap_caps_get_free_size(MALLOC_CAP_32BIT), heap_caps_get_free_size(MALLOC_CAP_8BIT) );
+#else
+    esp_wifi_stop();
 #endif // #if WIFI_FLAG == 1
     
     // ステータスLED点灯
@@ -717,8 +724,75 @@ void AzKeyboard::press_data_clear() {
     
 }
 
+// 電源スイッチ用ループ
+void AzKeyboard::power_sleep_loop() {
+    // 電源スイッチが設定されていなければ何もしない
+    if (power_pin < 0) return;
 
-// 押された所を1にする
+    if (!digitalRead(power_pin)) {
+        // 電源スイッチがOFFならばスリープに入る
+        delay(50);
+        // wifiとBLEを止める
+        esp_bluedroid_disable();
+        esp_bt_controller_disable();
+        esp_wifi_stop();
+        setCpuFrequencyMhz(10);
+        status_led_mode = 0;
+        while (!digitalRead(power_pin)) {
+            delay(100);
+        }
+        ESP.restart();
+        /*
+        setCpuFrequencyMhz(80);
+        esp_bluedroid_enable();
+        esp_bt_controller_enable(ESP_BT_MODE_BLE);
+        begin_keyboard();
+        start_keyboard();
+        bleKeyboard.press_set(6);
+        delay(50);
+        bleKeyboard.releaseAll();
+        delay(50);
+        */
+       /*
+       esp_deep_sleep_enable_gpio_wakeup(1 << power_pin, ESP_GPIO_WAKEUP_GPIO_HIGH);
+       gpio_set_direction((gpio_num_t)power_pin, GPIO_MODE_INPUT);  // <<<=== Add this line
+       esp_deep_sleep_start();
+       */
+       
+        // rtc_gpio_isolate(GPIO_NUM_12) 内部プルアップを無効化
+        // スリープ中も電源ドメインはON
+        // esp_sleep_pd_config(ESP_PD_DOMAIN_VDDSDIO, ESP_PD_OPTION_ON);
+        // スイッチONになったらスリープから抜ける
+        // esp_sleep_enable_ext0_wakeup(16, 1);
+        /*
+        esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_ON);
+        rtc_gpio_pullup_en(GPIO_NUM_16);
+        rtc_gpio_pulldown_dis(GPIO_NUM_16);        // esp_sleep_enable_ext0_wakeup(GPIO_NUM_16, LOW);
+        */
+       // esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_ON);
+       // esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_SLOW_MEM, ESP_PD_OPTION_ON);
+       // esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_FAST_MEM, ESP_PD_OPTION_ON);        // rtc_gpio_pullup_en(GPIO_NUM_1);
+        // esp_sleep_enable_ext0_wakeup( GPIO_NUM_2, ESP_EXT1_WAKEUP_ANY_HIGH);
+        // rtc_gpio_pulldown_dis(GPIO_NUM_1);        // esp_sleep_enable_ext0_wakeup(GPIO_NUM_16, LOW);
+        // gpio_deep_sleep_hold_dis();
+        // esp_sleep_config_gpio_isolate();
+        // esp_deep_sleep_enable_gpio_wakeup(BIT64(power_pin), ESP_GPIO_WAKEUP_GPIO_LOW);
+        // esp_deep_sleep_enable_gpio_wakeup(1 << 16, ESP_GPIO_WAKEUP_GPIO_HIGH);
+        // gpio_set_direction((gpio_num_t)power_pin, GPIO_MODE_INPUT);
+        // esp_sleep_enable_timer_wakeup(20 * 1000000);
+        // esp_sleep_enable_ext1_wakeup_io( 2 ^ GPIO_NUM_2, ESP_EXT1_WAKEUP_ANY_HIGH);
+        // rtc_gpio_pulldown_dis(GPIO_NUM_2); // GPIO33 is tie to GND in order to wake up in HIGH
+        // rtc_gpio_pullup_en(GPIO_NUM_2); // Disable PULL_UP in order to allow it to wakeup on HIGH
+        // esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_ON);
+        // rtc_gpio_pullup_en(GPIO_NUM_1);
+        // rtc_gpio_pulldown_dis(GPIO_NUM_1);
+        // esp_sleep_pd_config について https://lang-ship.com/blog/work/esp32-sleep-setting/#google_vignette
+
+        // ディープスリープ開始
+        // esp_deep_sleep_start();
+    }
+
+}
 
 // 定期実行の処理
 void AzKeyboard::loop_exec(void) {
@@ -753,6 +827,9 @@ void AzKeyboard::loop_exec(void) {
 
     // 省電力モード用ループ処理
     power_saving_loop();
+
+    // 電源スイッチ用ループ処理
+    power_sleep_loop();
 
     // eztoolツールI2Cオプション設定中はループ処理をしない(I2Cの読み込みが走っちゃうと落ちるから)
     while (aztool_mode_flag == 1) {

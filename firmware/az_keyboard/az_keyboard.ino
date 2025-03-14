@@ -16,6 +16,10 @@ void setup() {
     common_cls.load_setting_json();
     // キーボード初期処理
     azkb.begin_keyboard();
+    // 電源ピン
+    if (power_pin >= 0) {
+        pinMode(power_pin, INPUT_PULLUP);
+    }
     // ステータス表示用のLED初期化
     if (status_pin >= 0) {
         pinMode(status_pin, OUTPUT);

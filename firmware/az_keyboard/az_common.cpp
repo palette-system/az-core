@@ -34,6 +34,9 @@ uint16_t hid_interval_normal = 28; // 通常時のBLEインターバル
 uint16_t hid_interval_saving = 80; // 省電力モード時のBLEインターバル
 int hid_saving_time = 0; // 省電力モードに入るまでの時間(ミリ秒)
 
+// 電源ピン番号
+int power_pin = -1;
+
 // ステータス表示用ピン番号
 int status_pin = -1;
 
@@ -188,7 +191,7 @@ void IRAM_ATTR status_led_write() {
     status_led_bit++;
     if (status_led_bit >= 20) status_led_bit = 0;
     if (status_led_mode == 0) {
-        set_bit = 0; // 消灯
+        set_bit = 1; // 消灯
 
     } else if (status_led_mode == 1) {
         if (keyboard_status) {
@@ -1066,6 +1069,13 @@ void AzCommon::load_setting_json() {
         if (setting_obj["power_saving"].containsKey("saving_time")) {
             hid_saving_time = setting_obj["power_saving"]["saving_time"].as<signed int>() * 1000;
         }
+    }
+
+    // 電源ピン番号取得
+    if (setting_obj.containsKey("power_pin")) {
+        power_pin = setting_obj["power_pin"].as<signed int>();
+    } else {
+        power_pin = -1;
     }
 
     // ステータス表示用ピン番号取得
