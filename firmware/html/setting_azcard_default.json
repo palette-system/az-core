@@ -1,0 +1,122 @@
+{
+    "ap": {"pass": ""},
+    "wifi": [],
+    "vendorId": "0xe502",
+    "productId": "0x0207",
+    "led_num": [],
+    "key_matrix": [],
+    "keyboard_language": 0,
+    "keyboard_name": "azcard",
+    "keyboard_type": "azcard",
+    "keyboard_pin": {
+        "direct": [],
+        "touch": [],
+        "col": [3, 4, 5],
+        "row": [7, 8, 9, 44]
+    },
+    "i2c_set": [-1, -1, 400000],
+    "default_layer": 0,
+    "layers": {
+        "layer_0": {
+            "name": "レイヤー0",
+            "keys": {
+                "key_0": {
+                    "press": {
+                        "action_type": 1,
+                        "key": [
+                            33
+                        ]
+                    }
+                },
+                "key_1": {
+                    "press": {
+                        "action_type": 1,
+                        "key": [
+                            30
+                        ]
+                    }
+                },
+                "key_2": {
+                    "press": {
+                        "action_type": 1,
+                        "key": [
+                            39
+                        ]
+                    }
+                },
+                "key_5": {
+                    "press": {
+                        "action_type": 1,
+                        "key": [
+                            31
+                        ]
+                    }
+                },
+                "key_9": {
+                    "press": {
+                        "action_type": 1,
+                        "key": [
+                            32
+                        ]
+                    }
+                },
+                "key_4": {
+                    "press": {
+                        "action_type": 1,
+                        "key": [
+                            34
+                        ]
+                    }
+                },
+                "key_8": {
+                    "press": {
+                        "action_type": 1,
+                        "key": [
+                            35
+                        ]
+                    }
+                },
+                "key_3": {
+                    "press": {
+                        "action_type": 1,
+                        "key": [
+                            36
+                        ]
+                    }
+                },
+                "key_7": {
+                    "press": {
+                        "action_type": 1,
+                        "key": [
+                            37
+                        ]
+                    }
+                },
+                "key_11": {
+                    "press": {
+                        "action_type": 1,
+                        "key": [
+                            38
+                        ]
+                    }
+                },
+                "key_10": {
+                    "press": {
+                        "action_type": 1,
+                        "key": [
+                            40
+                        ]
+                    }
+                },
+                "key_6": {
+                    "press": {
+                        "action_type": 1,
+                        "key": [
+                            76
+                        ]
+                    }
+                }
+            }
+        }
+    }
+}
