@@ -602,7 +602,19 @@ void BleKeyboardC6::mouse_move(signed char x, signed char y, signed char wheel, 
     }
 };
 size_t BleKeyboardC6::press_set(uint8_t k) {
-    return 0;
+    unsigned short kk;
+    kk = _asciimap[k];
+    if (!kk) return 0;
+    this->_keyReport.modifiers = 0x00;
+    this->_keyReport.keys[0] = this->modifiers_press(kk);
+    this->_keyReport.keys[1] = 0x00;
+    this->_keyReport.keys[2] = 0x00;
+    this->_keyReport.keys[3] = 0x00;
+    this->_keyReport.keys[4] = 0x00;
+    this->_keyReport.keys[5] = 0x00;
+
+    this->sendReport(&_keyReport);
+    return 1;
 }; // 指定したキーだけ押す
 size_t BleKeyboardC6::press_raw(unsigned short k) {
   // Serial.printf("press_raw %d\r\n", k);

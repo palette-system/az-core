@@ -30,6 +30,14 @@ $(function(){
         ], 921600, "write_info");
     });
 
+    $("#write_firm_check").click(function() {
+        azesp.write_firm([
+        {"address": 0x0000, "data": "./data/azcard/esp32_neopixcel.ino.bootloader.bin"},
+        {"address": 0x8000, "data": "./data/azcard/esp32_neopixcel.ino.partitions.bin"},
+        {"address": 0xe000, "data": "./data/boot_app0.bin"},
+        {"address": 0x10000, "data": "./data/azcard/esp32_neopixcel.ino.bin"}
+        ], 921600, "write_info_check");
+    });
 
 });
 
@@ -80,8 +88,13 @@ $(function(){
     <br>
     書き込みモードになったら下記の書込みボタンをクリックしてファームウェアを書き込んでください。<br>
     「Write Complated.」と表示されたら書き込み完了です。ESP32S3をPCから一度外して付け直すとキーボードAZCARDとして認識されます。<br><br>
-    <a id="write_firm" class="link_btn">AZCARD ファームウェア 書込み</a><br>
+    <a id="write_firm_check" class="link_btn">動作確認 ファームウェア 書込み</a><br>
+    <div id="write_info_check"></div>
+    <br><br>
+
+    <a id="write_firm" class="link_btn">キーボード ファームウェア 書込み</a><br>
     <div id="write_info"></div>
+
     
     </div>
     <br><br>
@@ -95,11 +108,14 @@ $(function(){
     
     </div>
     <br><br>
+    <br><br>
 
     <h2>キーボードの設定（AZTOOL）</h2>
     <div class="content_body">
     
-        戻るやミュートなど各ボタンの割り当てを変更できます。<br><br>
+        キーボード。<br>
+        戻るやミュートなど各ボタンの割り当てを変更できます。<br>
+        <br>
         <a class="link_btn" href="https://palette-system.github.io/aztool/">AZTOOL</a><br>
     
     </div>

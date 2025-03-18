@@ -314,8 +314,19 @@ void CustomHIDDevice::mouse_release(uint8_t b) {
 };
 // 指定したキーだけ押す
 size_t CustomHIDDevice::press_set(uint8_t k) {
-    // Serial.printf("press_set %d\r\n", k);
-    return 0;
+    unsigned short kk;
+    kk = _asciimap[k];
+    if (!kk) return 0;
+    this->_keyReport.modifiers = 0x00;
+    this->_keyReport.keys[0] = this->modifiers_press(kk);
+    this->_keyReport.keys[1] = 0x00;
+    this->_keyReport.keys[2] = 0x00;
+    this->_keyReport.keys[3] = 0x00;
+    this->_keyReport.keys[4] = 0x00;
+    this->_keyReport.keys[5] = 0x00;
+
+    this->sendReport(&_keyReport);
+    return 1;
 };
 size_t CustomHIDDevice::press_raw(unsigned short k) {
   // Serial.printf("press_raw %d\r\n", k);
