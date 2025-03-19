@@ -26,8 +26,9 @@ azesp.erase_flash = async function(write_speed, info_id) {
     let baudrate = (write_speed)? write_speed: 115200;
     if (info_id) azesp.info_div = info_id;
     let esptoolMod = await import("./esptool/bundle.js");
+    azesp.esptoolMod = esptoolMod;
     try {
-        let esploader = await esptoolMod.connect({
+        let esploader = await esptoolMod.ESPLoader.connect({
             log: azesp.log,
             debug: azesp.log,
             error: azesp.log,
@@ -70,7 +71,7 @@ azesp.write_firm = async function(flash_list, write_speed, info_id) {
     let esptoolMod = await import("./esptool/bundle.js");
     azesp.esptoolMod = esptoolMod;
     try {
-        let esploader = await esptoolMod.connect({
+        let esploader = await esptoolMod.ESPLoader.connect({
             log: azesp.log,
             debug: azesp.log,
             error: azesp.log,
