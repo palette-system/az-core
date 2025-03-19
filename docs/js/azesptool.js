@@ -95,8 +95,8 @@ azesp.write_firm = async function(flash_list, write_speed, info_id) {
             transport,
             baudrate: parseInt(baudrate),
             terminal: azesp.espLoaderTerminal,
-            debugLogging: true,
-          } as LoaderOptions;
+            debugLogging: true
+          };
           azesp.esploader = new ESPLoader(flashOptions);
       
           azesp.chip = await azesp.esploader.main();
