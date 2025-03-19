@@ -4,7 +4,7 @@
 azesp = {};
 
 azesp.serialLib = !navigator.serial && navigator.usb ? serial : navigator.serial;
-azesp.esptoolMod = await import("./esptool/bundle.js");
+azesp.esptoolMod = import("./esptool/bundle.js");
 
 azesp.espStub = false;
 azesp.ajax_status = 0;
