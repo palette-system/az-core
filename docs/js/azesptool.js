@@ -88,7 +88,7 @@ azesp.write_firm = async function(flash_list, write_speed, info_id) {
     if (info_id) azesp.info_div = info_id;
     
         azesp.esptool = await azesp.esptoolMod;
-        if (azesp.device === null) {
+        if (!azesp.device) {
             azesp.device = await azesp.serialLib.requestPort({});
             azesp.transport = new azesp.esptool.Transport(azesp.device, true);
         }
