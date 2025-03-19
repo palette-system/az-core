@@ -92,9 +92,8 @@ azesp.write_firm = async function(flash_list, write_speed, info_id) {
             azesp.device = await azesp.serialLib.requestPort({});
             azesp.transport = new azesp.esptool.Transport(azesp.device, true);
         }
-        let t = azesp.transport;
         const flashOptions = {
-            t,
+            transport: azesp.transport,
             baudrate: parseInt(baudrate),
             terminal: azesp.espLoaderTerminal,
             debugLogging: true
