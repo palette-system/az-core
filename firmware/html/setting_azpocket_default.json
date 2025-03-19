@@ -2,7 +2,7 @@
     "ap": {"pass": ""},
     "wifi": [],
     "vendorId": "0xe502",
-    "productId": "0x0205",
+    "productId": "0x0206",
     "led_num": [],
     "key_matrix": [],
     "keyboard_language": 0,
@@ -32,7 +32,7 @@
                 },
                 "key_1": {
                     "press": {
-                        "action_type": 1,
+                        "action_type": "1",
                         "key": [7]
                     }
                 },
@@ -42,16 +42,16 @@
                         "key": [4]
                     }
                 },
-                "key_4": {
-                    "press": {
-                        "action_type": 1,
-                        "key": [5]
-                    }
-                },
                 "key_3": {
                     "press": {
                         "action_type": 1,
                         "key": [6]
+                    }
+                },
+                "key_4": {
+                    "press": {
+                        "action_type": 1,
+                        "key": [5]
                     }
                 },
                 "key_5": {
@@ -65,22 +65,11 @@
         "layer_1": {
             "name": "レイヤー1",
             "keys": {
-                "key_2": {
+                "key_0": {
                     "press": {
-                        "action_type": 1,
-                        "key": [8]
-                    }
-                },
-                "key_4": {
-                    "press": {
-                        "action_type": 1,
-                        "key": [9]
-                    }
-                },
-                "key_3": {
-                    "press": {
-                        "action_type": 1,
-                        "key": [10]
+                        "action_type": "3",
+                        "layer": "0",
+                        "layer_type": "83"
                     }
                 },
                 "key_1": {
@@ -89,59 +78,28 @@
                         "key": [11]
                     }
                 },
-                "key_0": {
+                "key_2": {
                     "press": {
-                        "action_type": "3",
-                        "layer": "2",
-                        "layer_type": "83"
+                        "action_type": 1,
+                        "key": [8]
+                    }
+                },
+                "key_3": {
+                    "press": {
+                        "action_type": 1,
+                        "key": [10]
+                    }
+                },
+                "key_4": {
+                    "press": {
+                        "action_type": 1,
+                        "key": [9]
                     }
                 },
                 "key_5": {
                     "press": {
                         "action_type": 1,
                         "key": [30]
-                    }
-                }
-            }
-        },
-        "layer_2": {
-            "name": "レイヤー2",
-            "keys": {
-                "key_2": {
-                    "press": {
-                        "action_type": 1,
-                        "key": [12]
-                    }
-                },
-                "key_4": {
-                    "press": {
-                        "action_type": 1,
-                        "key": [13]
-                    }
-                },
-                "key_3": {
-                    "press": {
-                        "action_type": 1,
-                        "key": [14]
-                    }
-                },
-                "key_1": {
-                    "press": {
-                        "action_type": 1,
-                        "key": [15]
-                    }
-                },
-                "key_5": {
-                    "press": {
-                        "action_type": 1,
-                        "key": [31]
-                    }
-                },
-                "key_0": {
-                    "press": {
-                        "action_type": "3",
-                        "layer": "0",
-                        "layer_type": "83"
                     }
                 }
             }

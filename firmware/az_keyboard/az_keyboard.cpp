@@ -724,24 +724,31 @@ void AzKeyboard::press_data_clear() {
     
 }
 
+void IRAM_ATTR wake_gpio_isr_handler(void* arg) {
+    gpio_intr_disable(GPIO_NUM_16);
+  
+  }
+
 // 電源スイッチ用ループ
 void AzKeyboard::power_sleep_loop() {
     // 電源スイッチが設定されていなければ何もしない
     if (power_pin < 0) return;
 
-    if (!digitalRead(power_pin)) {
+    if (digitalRead(power_pin)) {
         // 電源スイッチがOFFならばスリープに入る
         delay(50);
         // wifiとBLEを止める
         esp_bluedroid_disable();
         esp_bt_controller_disable();
-        esp_wifi_stop();
+        // esp_wifi_stop();
+        /*
         setCpuFrequencyMhz(10);
         status_led_mode = 0;
         while (!digitalRead(power_pin)) {
             delay(100);
         }
         ESP.restart();
+        */
         /*
         setCpuFrequencyMhz(80);
         esp_bluedroid_enable();
@@ -753,43 +760,14 @@ void AzKeyboard::power_sleep_loop() {
         bleKeyboard.releaseAll();
         delay(50);
         */
-       /*
-       esp_deep_sleep_enable_gpio_wakeup(1 << power_pin, ESP_GPIO_WAKEUP_GPIO_HIGH);
-       gpio_set_direction((gpio_num_t)power_pin, GPIO_MODE_INPUT);  // <<<=== Add this line
-       esp_deep_sleep_start();
-       */
-       
-        // rtc_gpio_isolate(GPIO_NUM_12) 内部プルアップを無効化
-        // スリープ中も電源ドメインはON
-        // esp_sleep_pd_config(ESP_PD_DOMAIN_VDDSDIO, ESP_PD_OPTION_ON);
-        // スイッチONになったらスリープから抜ける
-        // esp_sleep_enable_ext0_wakeup(16, 1);
-        /*
-        esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_ON);
-        rtc_gpio_pullup_en(GPIO_NUM_16);
-        rtc_gpio_pulldown_dis(GPIO_NUM_16);        // esp_sleep_enable_ext0_wakeup(GPIO_NUM_16, LOW);
-        */
-       // esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_ON);
-       // esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_SLOW_MEM, ESP_PD_OPTION_ON);
-       // esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_FAST_MEM, ESP_PD_OPTION_ON);        // rtc_gpio_pullup_en(GPIO_NUM_1);
-        // esp_sleep_enable_ext0_wakeup( GPIO_NUM_2, ESP_EXT1_WAKEUP_ANY_HIGH);
-        // rtc_gpio_pulldown_dis(GPIO_NUM_1);        // esp_sleep_enable_ext0_wakeup(GPIO_NUM_16, LOW);
-        // gpio_deep_sleep_hold_dis();
-        // esp_sleep_config_gpio_isolate();
-        // esp_deep_sleep_enable_gpio_wakeup(BIT64(power_pin), ESP_GPIO_WAKEUP_GPIO_LOW);
-        // esp_deep_sleep_enable_gpio_wakeup(1 << 16, ESP_GPIO_WAKEUP_GPIO_HIGH);
-        // gpio_set_direction((gpio_num_t)power_pin, GPIO_MODE_INPUT);
-        // esp_sleep_enable_timer_wakeup(20 * 1000000);
-        // esp_sleep_enable_ext1_wakeup_io( 2 ^ GPIO_NUM_2, ESP_EXT1_WAKEUP_ANY_HIGH);
-        // rtc_gpio_pulldown_dis(GPIO_NUM_2); // GPIO33 is tie to GND in order to wake up in HIGH
-        // rtc_gpio_pullup_en(GPIO_NUM_2); // Disable PULL_UP in order to allow it to wakeup on HIGH
-        // esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_ON);
-        // rtc_gpio_pullup_en(GPIO_NUM_1);
-        // rtc_gpio_pulldown_dis(GPIO_NUM_1);
-        // esp_sleep_pd_config について https://lang-ship.com/blog/work/esp32-sleep-setting/#google_vignette
+       delay(100);
+       esp_light_sleep_start();
+       ESP.restart();
 
-        // ディープスリープ開始
-        // esp_deep_sleep_start();
+       // esp_bluedroid_enable();
+       // esp_bt_controller_enable(ESP_BT_MODE_BLE);
+       // delay(100);
+
     }
 
 }

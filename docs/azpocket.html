@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<title>パレットシステム AZPOCKET インフォメーション</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="css/style.css">
+<script src="./js/fixmenu_pagetop.js"></script>
+<script src="./js/azesptool.js"></script>
+<!--
+<script language="JavaScript" src="./js/utilities.js"></script>
+<script language="JavaScript" src="./js/az_esploader.js"></script>
+-->
+<!--[if lt IE 9]>
+<script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+<script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+<![endif]-->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+<script>
+
+
+$(function(){
+    $("#write_firm").click(function() {
+        azesp.write_firm([
+        {"address": 0x0000, "data": "./data/azpocket/az_keyboard.ino.bootloader.0.1.20.bin"},
+        {"address": 0x8000, "data": "./data/azpocket/az_keyboard.ino.partitions.0.1.20.bin"},
+        {"address": 0xe000, "data": "./data/boot_app0.bin"},
+        {"address": 0x10000, "data": "./data/azpocket/az_keyboard.ino.0.1.20.bin"}
+        ], 921600, "write_info");
+    });
+
+});
+
+</script>
+</head>
+
+<body>
+
+<!--
+<header>
+</header>
+-->
+
+<div id="container">
+
+<div id="contents">
+
+<section id="new">
+
+    <h2>AZPOCKET のファームウェア 書込み</h2>
+    <div class="content_body">
+        このページはAZPOCKETのファームウェアをXIAO ESP32C6に書込むためのページです。<br>
+        下記の手順でドライバのインストールとファームウェアの書き込みを行ってください。<br>
+        Chromeで開く必要があります。<br><br>
+    </div>
+    <br><br>
+
+    <h2>１．ドライバのインストール</h2>
+    <div class="content_body">
+        <table cellpadding="10"><tr><td valign="top">
+            </td><td valign="top">
+            下記サイトから「ESP-IDF Tools Installer」をダウンロードしてドライバのみをインストールして下さい。<br>
+            ※ 既にESP32S3を使用した事があるPCであればインストール不要です。<br><br>
+            <a href="https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/get-started/windows-setup.html#get-started-windows-tools-installer" target="_blank" class="link_btn">ESP-IDF Tools Installer</a><br>
+            <br>
+            <img src="./img/driver_install.png">
+        </td></tr></table>
+    </div>
+    <br><br>
+    
+
+    <h2>２．ファームウェアの書き込み</h2>
+    <div class="content_body">
+    
+    XIAO ESP32C6をPCに接続してBOOTボタンを押しながらRESETボタンを押して下さい。ESP32S3が書き込みモードで起動します。<br>
+    <br>
+    <img src="./img/esp32c6_boot.png"><br>
+    <br>
+    書き込みモードになったら下記の書込みボタンをクリックしてファームウェアを書き込んでください。<br>
+    「Write Complated.」と表示されたら書き込み完了です。Bluetoothからデバイスを検索するとAZPOCKETとして認識されます。<br><br>
+
+    <a id="write_firm" class="link_btn">キーボード ファームウェア 書込み</a><br>
+    <div id="write_info"></div>
+
+    
+    </div>
+    <br><br>
+    <br><br>
+
+    <h2>ファームウェアのソースコード</h2>
+    <div class="content_body">
+    
+        独自機能を追加したい場合はこちらのソースを使用して下さい。<br><br>
+        <a class="link_btn" href="https://github.com/palette-system/az-core/tree/main/firmware/az_keyboard">ファームウェア ソースコード</a><br>
+    
+    </div>
+    <br><br>
+    <br><br>
+
+    <h2>キーボードの設定（AZTOOL）</h2>
+    <div class="content_body">
+    
+        キーボード。<br>
+        戻るやミュートなど各ボタンの割り当てを変更できます。<br>
+        <br>
+        <a class="link_btn" href="https://palette-system.github.io/aztool/">AZTOOL</a><br>
+    
+    </div>
+    <br><br>
+
+    <br><br><br><br>
+    
+
+</section>
+<!--/#new-->
+
+
+
+<!--ページの上部に戻る「↑」ボタン-->
+<p class="nav-fix-pos-pagetop"><a href="#">↑</a></p>
+
+</div>
+</div>
+
+</body>
+</html>
