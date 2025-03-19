@@ -5,7 +5,7 @@ azesp = {};
 
 azesp.serialLib = !navigator.serial && navigator.usb ? serial : navigator.serial;
 azesp.esptoolMod = import("./esptool/bundle.js");
-azesp.esptool = await azesp.esptoolMod;
+
 
 azesp.espStub = false;
 azesp.ajax_status = 0;
@@ -87,21 +87,22 @@ azesp.write_firm = async function(flash_list, write_speed, info_id) {
     let baudrate = (write_speed)? write_speed: 115200;
     if (info_id) azesp.info_div = info_id;
     
-    try {
+        azesp.esptool = await azesp.esptoolMod;
         if (azesp.device === null) {
             azesp.device = await azesp.serialLib.requestPort({});
             azesp.transport = new azesp.esptoolMod.Transport(azesp.device, true);
-          }
-          const flashOptions = {
+        }
+        const flashOptions = {
             transport,
             baudrate: parseInt(baudrate),
             terminal: azesp.espLoaderTerminal,
             debugLogging: true
-          };
-          azesp.esploader = new ESPLoader(flashOptions);
-      
-          azesp.chip = await azesp.esploader.main();
-          return;
+        };
+        azesp.esploader = new ESPLoader(flashOptions);
+    
+        azesp.chip = await azesp.esploader.main();
+        return;
+        try {
 
 
         let esploader = await esptoolMod.ESPLoader.prototype.connect(baudrate, {
