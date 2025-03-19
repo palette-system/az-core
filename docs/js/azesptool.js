@@ -1,12 +1,31 @@
 // https://github.com/NabuCasa/esp-web-flasher
 
+
 azesp = {};
+
+azesp.serialLib = !navigator.serial && navigator.usb ? serial : navigator.serial;
+azesp.esptoolMod = await import("./esptool/bundle.js");
 
 azesp.espStub = false;
 azesp.ajax_status = 0;
 azesp.download_data = {};
 
 azesp.info_div = "";
+
+// 書き込みのターミナル用
+azesp.espLoaderTerminal = {
+    "clean": function() {
+        console.log("espLoaderTerminal: clean");
+    },
+    "writeLine": function(data) {
+        console.log("espLoaderTerminal: writeLine");
+        console.log(data);
+    },
+    "write": function(data) {
+        console.log("espLoaderTerminal: write");
+        console.log(data);
+    }
+};
 
 azesp.log = function(msg) {
     console.log(msg);
@@ -25,10 +44,8 @@ azesp.formatMacAddr = function(macAddr) {
 azesp.erase_flash = async function(write_speed, info_id) {
     let baudrate = (write_speed)? write_speed: 115200;
     if (info_id) azesp.info_div = info_id;
-    let esptoolMod = await import("./esptool/bundle.js");
-    azesp.esptoolMod = esptoolMod;
     try {
-        let esploader = await esptoolMod.ESPLoader.prototype.connect({
+        let esploader = await azesp.esptoolMod.ESPLoader.prototype.connect({
             log: azesp.log,
             debug: azesp.log,
             error: azesp.log,
@@ -69,9 +86,23 @@ azesp.write_firm = async function(flash_list, write_speed, info_id) {
     let baudrate = (write_speed)? write_speed: 115200;
     if (info_id) azesp.info_div = info_id;
     
-    let esptoolMod = ESPLoader();
-    azesp.esptoolMod = esptoolMod;
     try {
+        if (azesp.device === null) {
+            azesp.device = await azesp.serialLib.requestPort({});
+            azesp.transport = new azesp.esptoolMod.Transport(azesp.device, true);
+          }
+          const flashOptions = {
+            transport,
+            baudrate: parseInt(baudrate),
+            terminal: azesp.espLoaderTerminal,
+            debugLogging: true,
+          } as LoaderOptions;
+          azesp.esploader = new ESPLoader(flashOptions);
+      
+          azesp.chip = await azesp.esploader.main();
+          return;
+
+
         let esploader = await esptoolMod.ESPLoader.prototype.connect(baudrate, {
             log: azesp.log,
             debug: azesp.log,
