@@ -1,5 +1,7 @@
 // https://github.com/NabuCasa/esp-web-flasher
 
+import {ESPLoader} from "./esptool/bundle.js";
+
 azesp = {};
 
 azesp.espStub = false;
@@ -68,10 +70,12 @@ azesp.erase_flash = async function(write_speed, info_id) {
 azesp.write_firm = async function(flash_list, write_speed, info_id) {
     let baudrate = (write_speed)? write_speed: 115200;
     if (info_id) azesp.info_div = info_id;
-    let esptoolMod = await import("./esptool/bundle.js");
+    
+    // let esptoolMod = await import("./esptool/bundle.js");
+    let esptoolMod = new ESPLoader();
     azesp.esptoolMod = esptoolMod;
     try {
-        let esploader = await esptoolMod.ESPLoader.prototype.connect({
+        let esploader = await esptoolMod.connect({
             log: azesp.log,
             debug: azesp.log,
             error: azesp.log,
