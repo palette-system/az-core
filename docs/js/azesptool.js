@@ -90,7 +90,7 @@ azesp.write_firm = async function(flash_list, write_speed, info_id) {
         azesp.esptool = await azesp.esptoolMod;
         if (azesp.device === null) {
             azesp.device = await azesp.serialLib.requestPort({});
-            azesp.transport = new azesp.esptoolMod.Transport(azesp.device, true);
+            azesp.transport = new azesp.esptool.Transport(azesp.device, true);
         }
         const flashOptions = {
             transport,
@@ -98,7 +98,7 @@ azesp.write_firm = async function(flash_list, write_speed, info_id) {
             terminal: azesp.espLoaderTerminal,
             debugLogging: true
         };
-        azesp.esploader = new ESPLoader(flashOptions);
+        azesp.esploader = new azesp.esptool.ESPLoader(flashOptions);
     
         azesp.chip = await azesp.esploader.main();
         return;
