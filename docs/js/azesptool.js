@@ -97,7 +97,7 @@ azesp.write_firm = async function(flash_list, write_speed, info_id) {
     
         azesp.chip = await azesp.esploader.main();
         azesp.log("Connected to " + azesp.chip);
-        azesp.log("MAC Address: " + azesp.formatMacAddr(azesp.esploader.chip.UART_DATE_REG_ADDR));
+        azesp.log("MAC Address: " + azesp.esploader.chip.UART_DATE_REG_ADDR);
 
         let i;
         for (i in flash_list) {
