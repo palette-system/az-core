@@ -69,10 +69,10 @@
 #define LOOP_DELAY_DEFAULT  5
 
 // ファームウェアのバージョン文字
-#define FIRMWARE_VERSION   "000120"
+#define FIRMWARE_VERSION   "000122"
 
 // EEPROMに保存しているデータのバージョン文字列
-#define EEP_DATA_VERSION    "AZC001"
+#define EEP_DATA_VERSION    "AZC003"
 
 // JSON のファイルパス
 #define SETTING_JSON_PATH "/setting.json"

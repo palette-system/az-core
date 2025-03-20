@@ -34,7 +34,7 @@ $(function(){
     });
 
     $("#clear_firm").click(function() {
-        azesp.erase_flash(921600);
+        azesp.erase_flash(921600,"clear_info");
     });
 
 });
@@ -90,7 +90,9 @@ $(function(){
     <a id="write_firm" class="link_btn">キーボード ファームウェア 書込み</a><br>
     <div id="write_info"></div>
 
+    <br><br>
     <a id="clear_firm" class="link_btn">クリア</a><br>
+    <div id="clear_info"></div>
     
     </div>
     <br><br>
