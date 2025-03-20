@@ -16,15 +16,13 @@ azesp.info_div = "";
 // 書き込みのターミナル用
 azesp.espLoaderTerminal = {
     "clean": function() {
-        console.log("espLoaderTerminal: clean");
+        azesp.log("");
     },
     "writeLine": function(data) {
-        console.log("espLoaderTerminal: writeLine");
-        console.log(data);
+        azesp.log(data);
     },
     "write": function(data) {
-        console.log("espLoaderTerminal: write");
-        console.log(data);
+        azesp.log(data);
     }
 };
 
@@ -88,19 +86,24 @@ azesp.write_firm = async function(flash_list, write_speed, info_id) {
     if (info_id) azesp.info_div = info_id;
     
         azesp.esptool = await azesp.esptoolMod;
-        if (!azesp.device) {
-            azesp.device = await azesp.serialLib.requestPort({});
-            azesp.transport = new azesp.esptool.Transport(azesp.device, true);
-        }
-        const flashOptions = {
-            transport: azesp.transport,
-            baudrate: parseInt(baudrate),
-            terminal: azesp.espLoaderTerminal,
-            debugLogging: true
-        };
-        azesp.esploader = new azesp.esptool.ESPLoader(flashOptions);
+        azesp.device = await azesp.serialLib.requestPort({});
+        azesp.transport = new azesp.esptool.Transport(azesp.device, true);
+        azesp.esploader = new azesp.esptool.ESPLoader({
+            "transport": azesp.transport,
+            "baudrate": parseInt(baudrate),
+            "terminal": azesp.espLoaderTerminal,
+            "debugLogging": true
+        });
     
         azesp.chip = await azesp.esploader.main();
+        azesp.log("Connected to " + azesp.chip);
+        azesp.log("MAC Address: " + azesp.formatMacAddr(azesp.esploader.chip.UART_DATE_REG_ADDR));
+
+        let i;
+        for (i in flash_list) {
+            await azesp.write_data(flash_list[i]);
+        }
+        await azesp.esploader.after();
         return;
         try {
 
@@ -209,13 +212,18 @@ azesp.write_data = async function(flash_data) {
         contents = flash_data.data; // それ以外はArrayBufferが入って来たと判定
     }
     // 書込み
-    await espStub.flashData(
-        contents,
-        function (bytesWritten, totalBytes) {
-            azesp.log("Write : " + bytesWritten + " / " + totalBytes + " ("+ Math.floor((bytesWritten / totalBytes) * 100) +" %)");
-        },
-        flash_data.address
-    );
+    await azesp.esploader.writeFlash({
+    "fileArray": [{"data": contents, "address": flash_data.address}],
+    "flashSize": "keep",
+    "eraseAll": false,
+    "compress": true,
+    "reportProgress": function(fileIndex, bytesWritten, totalBytes) {
+        azesp.log("Write : " + bytesWritten + " / " + totalBytes + " ("+ Math.floor((bytesWritten / totalBytes) * 100) +" %)");
+    },
+    "calculateMD5Hash": function(image) {
+        // CryptoJS.MD5(CryptoJS.enc.Latin1.parse(image));
+    }
+    });
     // ちょっと待つ
     await azesp.sleep(100);
 };
