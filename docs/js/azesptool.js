@@ -101,13 +101,18 @@ azesp.write_firm = async function(flash_list, write_speed, info_id) {
         // azesp.log("MAC Address: " + azesp.esploader.chip.UART_DATE_REG_ADDR);
 
         // 書き込みデータ作成
-        let i;
+        let i, d;
         azesp.write_data_list = [];
         for (i in flash_list) {
+            d = await azesp.load_data(flash_list[i]);
+            d.charCodeAt = function (i) { return this[i]; };
+            d.length = d.byteLength;
+
             azesp.write_data_list.push({
                 "address": flash_list[i].address,
                 // "data": new Uint8Array(await azesp.load_data(flash_list[i]))
-                "data": await azesp.load_data(flash_list[i])
+                // "data": await azesp.load_data(flash_list[i])
+                "data": d
             });
         }
         console.log(azesp.write_data_list);
@@ -156,8 +161,7 @@ azesp.reboot = async function () {
 azesp.ajaxArrayBuffer = function(src) {
     var xhr = new XMLHttpRequest();
     xhr.open("GET", src, true);
-    // xhr.responseType = "arraybuffer"; // arraybuffer blob text json 
-    xhr.responseType = "text";
+    xhr.responseType = "arraybuffer"; // arraybuffer blob text json 
     xhr.onload = function(e) {
         if (xhr.status == 200) {
             azesp.ajax_status = 2;
