@@ -100,17 +100,18 @@ azesp.write_firm = async function(flash_list, write_speed, info_id) {
         // azesp.log("MAC Address: " + azesp.esploader.chip.UART_DATE_REG_ADDR);
 
         // 書き込みデータ作成
-        let i, write_data_list = [];
+        let i;
+        azesp.write_data_list = [];
         for (i in flash_list) {
-            write_data_list.push({
+            azesp.write_data_list.push({
                 "address": flash_list[i].address,
                 "data": await azesp.load_data(flash_list[i])
             });
         }
-        console.log(write_data_list);
+        console.log(azesp.write_data_list);
         // 書込み処理実行
         await azesp.esploader.writeFlash({
-            "fileArray": write_data_list,
+            "fileArray": azesp.write_data_list,
             "flashSize": "keep",
             "eraseAll": false,
             "compress": true,
