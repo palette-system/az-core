@@ -26,10 +26,10 @@
 $(function(){
     $("#write_firm").click(function() {
         azesp.write_firm([
-        {"address": 0x0000, "data": "./data/azpocket/az_keyboard.ino.bootloader.azpocket.bin"},
-        {"address": 0x8000, "data": "./data/azpocket/az_keyboard.ino.partitions.azpocket.bin"},
+        {"address": 0x0000, "data": "./data/azpocket/az_keyboard.ino.bootloader.0.1.21.bin"},
+        {"address": 0x8000, "data": "./data/azpocket/az_keyboard.ino.partitions.0.1.21.bin"},
         {"address": 0xe000, "data": "./data/boot_app0.bin"},
-        {"address": 0x10000, "data": "./data/azpocket/az_keyboard.ino.azpocket.bin"}
+        {"address": 0x10000, "data": "./data/azpocket/az_keyboard.ino.0.1.21.bin"}
         ], 921600, "write_info");
     });
 
