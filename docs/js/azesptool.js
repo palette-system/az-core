@@ -104,8 +104,8 @@ azesp.write_firm = async function(flash_list, write_speed, info_id) {
         let i, d;
         azesp.write_data_list = [];
         for (i in flash_list) {
-            d = await azesp.load_data(flash_list[i]);
-            d.charCodeAt = function (i) { return this[i]; };
+            d = new Uint8Array(await azesp.load_data(flash_list[i]));
+            d.charCodeAt = function(i) { return this[i]; };
             d.length = d.byteLength;
 
             azesp.write_data_list.push({
