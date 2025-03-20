@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" href="css/style.css">
 <script src="./js/fixmenu_pagetop.js"></script>
-<script src="./js/azesptool.js?24"></script>
+<script src="./js/azesptool.js?25"></script>
 <!--
 <script language="JavaScript" src="./js/utilities.js"></script>
 <script language="JavaScript" src="./js/az_esploader.js"></script>
@@ -28,6 +28,10 @@ $(function(){
         {"address": 0xe000, "data": "./data/boot_app0.bin"},
         {"address": 0x10000, "data": "./data/azpocket/az_keyboard.ino.azpocket.bin"}
         ], 921600, "write_info");
+    });
+
+    $("#clear_firm").click(function() {
+        azesp.erase_flash(921600);
     });
 
 });
@@ -83,6 +87,7 @@ $(function(){
     <a id="write_firm" class="link_btn">キーボード ファームウェア 書込み</a><br>
     <div id="write_info"></div>
 
+    <a id="clear_firm" class="link_btn">クリア</a><br>
     
     </div>
     <br><br>
