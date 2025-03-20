@@ -110,8 +110,6 @@ azesp.write_firm = async function(flash_list, write_speed, info_id) {
 
             azesp.write_data_list.push({
                 "address": flash_list[i].address,
-                // "data": new Uint8Array(await azesp.load_data(flash_list[i]))
-                // "data": await azesp.load_data(flash_list[i])
                 "data": d
             });
         }
