@@ -93,7 +93,7 @@ azesp.write_firm = async function(flash_list, write_speed, info_id) {
             "transport": azesp.transport,
             "baudrate": parseInt(baudrate),
             "terminal": azesp.espLoaderTerminal,
-            "debugLogging": true
+            "debugLogging": false
         });
 
         azesp.chip = await azesp.esploader.main(); // ESP32の種類を取得
