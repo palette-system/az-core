@@ -85,26 +85,59 @@ azesp.write_firm = async function(flash_list, write_speed, info_id) {
     let baudrate = (write_speed)? write_speed: 115200;
     if (info_id) azesp.info_div = info_id;
     
-        azesp.esptool = await azesp.esptoolMod;
-        azesp.device = await azesp.serialLib.requestPort({});
-        azesp.transport = new azesp.esptool.Transport(azesp.device, true);
-        azesp.esploader = new azesp.esptool.ESPLoader({
-            "transport": azesp.transport,
-            "baudrate": parseInt(baudrate),
-            "terminal": azesp.espLoaderTerminal,
-            "debugLogging": true
-        });
-    
-        azesp.chip = await azesp.esploader.main();
-        azesp.log("Connected to " + azesp.chip);
-        azesp.log("MAC Address: " + azesp.esploader.chip.UART_DATE_REG_ADDR);
+    // 接続
+    azesp.esptool = await azesp.esptoolMod;
+    azesp.device = await azesp.serialLib.requestPort({}); // シリアルポートに接続
+    azesp.transport = new azesp.esptool.Transport(azesp.device, true); // シリアルポートに接続
+    azesp.esploader = new azesp.esptool.ESPLoader({ // ESPTOOL 初期化
+        "transport": azesp.transport,
+        "baudrate": parseInt(baudrate),
+        "terminal": azesp.espLoaderTerminal,
+        "debugLogging": true
+    });
 
-        let i;
-        for (i in flash_list) {
-            await azesp.write_data(flash_list[i]);
+    azesp.chip = await azesp.esploader.main(); // 
+    azesp.log("Connected to " + azesp.chip);
+    azesp.log("MAC Address: " + azesp.esploader.chip.UART_DATE_REG_ADDR);
+
+    // データ書き込み
+    let i, write_data_list = [];
+    for (i in flash_list) {
+        write_data_list.push({
+            "address": flash_list[i].address,
+            "data": await azesp.load_data(flash_list[i])
+        });
+    }
+    console.log(write_data_list);
+    // 書込み
+    await azesp.esploader.writeFlash({
+        "fileArray": write_data_list,
+        "flashSize": "keep",
+        "eraseAll": false,
+        "compress": true,
+        "reportProgress": function(fileIndex, bytesWritten, totalBytes) {
+            azesp.log("Write : " + bytesWritten + " / " + totalBytes + " ("+ Math.floor((bytesWritten / totalBytes) * 100) +" %)");
+        },
+        "calculateMD5Hash": function(image) {
+            // CryptoJS.MD5(CryptoJS.enc.Latin1.parse(image));
         }
-        await azesp.esploader.after();
-        return;
+    });
+    // ちょっと待つ
+    await azesp.sleep(100);
+    // 後処理
+    await azesp.esploader.after();
+
+    // 切断
+    await azesp.transport.disconnect();
+
+    // ESP32 再起動
+    azesp.log("Reboot Started.");
+    await azesp.reboot();
+    await azesp.sleep(1000);
+
+    azesp.log("Write Complated.");
+
+    return;
         try {
 
 
@@ -188,7 +221,7 @@ azesp.arrayToArraybuffer = function(array_data) {
 };
 
 // データを書き込む
-azesp.write_data = async function(flash_data) {
+azesp.load_data = async function(flash_data) {
     let contents;
     // データ取得
     if (typeof flash_data.data == "string") {
@@ -211,19 +244,5 @@ azesp.write_data = async function(flash_data) {
     } else {
         contents = flash_data.data; // それ以外はArrayBufferが入って来たと判定
     }
-    // 書込み
-    await azesp.esploader.writeFlash({
-    "fileArray": [{"data": contents, "address": flash_data.address}],
-    "flashSize": "keep",
-    "eraseAll": false,
-    "compress": true,
-    "reportProgress": function(fileIndex, bytesWritten, totalBytes) {
-        azesp.log("Write : " + bytesWritten + " / " + totalBytes + " ("+ Math.floor((bytesWritten / totalBytes) * 100) +" %)");
-    },
-    "calculateMD5Hash": function(image) {
-        // CryptoJS.MD5(CryptoJS.enc.Latin1.parse(image));
-    }
-    });
-    // ちょっと待つ
-    await azesp.sleep(100);
+    return contents;
 };
