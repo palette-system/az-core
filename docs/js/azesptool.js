@@ -89,7 +89,6 @@ azesp.write_firm = async function(flash_list, write_speed, info_id) {
         // azesp.device = await azesp.serialLib.requestPort({}); // シリアルポートに接続
         azesp.device = await navigator.serial.requestPort({  });
         azesp.transport = new azesp.esptool.Transport(azesp.device, true); // シリアルポートに接続
-        await azesp.transport.connect(parseInt(baudrate));
         azesp.esploader = new azesp.esptool.ESPLoader({ // ESPTOOL 初期化
             "transport": azesp.transport,
             "baudrate": parseInt(baudrate),
