@@ -106,7 +106,8 @@ azesp.write_firm = async function(flash_list, write_speed, info_id) {
         for (i in flash_list) {
             azesp.write_data_list.push({
                 "address": flash_list[i].address,
-                "data": new Uint8Array(await azesp.load_data(flash_list[i]))
+                // "data": new Uint8Array(await azesp.load_data(flash_list[i]))
+                "data": await azesp.load_data(flash_list[i])
             });
         }
         console.log(azesp.write_data_list);
@@ -155,7 +156,8 @@ azesp.reboot = async function () {
 azesp.ajaxArrayBuffer = function(src) {
     var xhr = new XMLHttpRequest();
     xhr.open("GET", src, true);
-    xhr.responseType = "arraybuffer";
+    // xhr.responseType = "arraybuffer"; // arraybuffer blob text json 
+    xhr.responseType = "text";
     xhr.onload = function(e) {
         if (xhr.status == 200) {
             azesp.ajax_status = 2;
