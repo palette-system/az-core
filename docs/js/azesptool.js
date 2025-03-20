@@ -115,14 +115,14 @@ azesp.write_firm = async function(flash_list, write_speed, info_id) {
             "fileArray": azesp.write_data_list,
             "flashSize": "keep",
             "eraseAll": false,
-            "compress": false,
+            "compress": true,
             "reportProgress": function(fileIndex, bytesWritten, totalBytes) {
                 azesp.log("Write : " + bytesWritten + " / " + totalBytes + " ("+ Math.floor((bytesWritten / totalBytes) * 100) +" %)");
             }
-            // ,"calculateMD5Hash": function(image) {
+            ,"calculateMD5Hash": function(image) {
                 // 確認用ハッシュ作成処理
-            //    CryptoJS.MD5(CryptoJS.enc.Latin1.parse(image));
-            // }
+                return CryptoJS.MD5(CryptoJS.enc.Latin1.parse(image));
+            }
         });
         await azesp.sleep(100);
         // 後処理
